@@ -1,0 +1,17 @@
+# Verilator build outputs
+build/
+obj_dir/
+
+# Waveforms
+*.vcd
+*.fst
+*.ghw
+
+# Logs
+*.log
+
+# Editor and OS metadata
+.vscode/
+.DS_Store
+Thumbs.db
+*:Zone.Identifier
