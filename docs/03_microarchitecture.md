@@ -2,9 +2,9 @@
 
 ## 1. 文档状态
 
-- 状态：第二版，baseline 微架构已冻结并实现，等待首次编译与仿真
+- 状态：第二版，PE、裸阵列、feeder、controller 与系统顶层 baseline 已冻结并实现
 - 对应 RTL：`rtl/systolic_pe.sv`、`rtl/systolic_array.sv`、`rtl/input_feeder.sv`、`rtl/systolic_controller.sv`、`rtl/systolic_array_top.sv`
-- 当前目的：记录 PE 状态语义、阵列空间拓扑、边界调度、操作控制、顶层接口和参数约束
+- 当前目的：记录 baseline 的状态语义、空间拓扑、时间调度、组合路径、控制协议和参数约束
 
 ## 2. 基线系统分解
 
@@ -13,12 +13,12 @@
 | 模块 | 责任 | 状态 |
 |---|---|---|
 | `systolic_pe` | signed MAC、A/B 转发、valid 转发、本地 accumulator | 已冻结并实现 |
-| `input_feeder` | 完整矩阵组合索引、边界供数与 skew | 已冻结并实现 |
+| `input_feeder` | 矩阵边界供数与 skew | 已冻结并实现 |
 | `systolic_array` | PE 生成、邻接互连和结果暴露 | 已冻结并实现 |
 | `systolic_controller` | operation 启动、clear、周期计数和完成判断 | 已冻结并实现 |
-| `systolic_array_top` | 集成 controller、feeder 和 array | 已冻结并实现 |
+| `systolic_array_top` | 集成 feeder、array 和 controller | 已冻结并实现 |
 
-以上“已实现”表示 RTL 已写入，不表示已经通过工具编译或仿真。
+完整矩阵由顶层输入提供，并在一次 operation 的 `busy` 区间保持稳定。baseline 不包含矩阵装载协议、SRAM、DMA 或 backpressure。
 
 ## 3. PE 责任
 
@@ -126,17 +126,13 @@ b_in ──► b_out register ──► lower PE
 
 两个 `DATA_W` 位 signed 输入的完整乘积宽度为：
 
-$$
-PROD\_W=2\times DATA\_W
-$$
+$$PROD\_W=2\times DATA\_W$$
 
 默认 `DATA_W = 8`，因此 `PROD_W = 16`。
 
 8-bit signed 输入范围为 $[-128,127]$。最大正乘积为：
 
-$$
-(-128)\times(-128)=16384
-$$
+$$(-128)\times(-128)=16384$$
 
 signed 15-bit 最大只能表示 16383，因此完整乘积必须使用 16-bit signed 表示。
 
@@ -144,9 +140,7 @@ signed 15-bit 最大只能表示 16383，因此完整乘积必须使用 16-bit s
 
 默认 MVP 最多累加四个乘积。最大正和为：
 
-$$
-4\times16384=65536
-$$
+$$4\times16384=65536$$
 
 signed 17-bit 的正数上限为 65535，因此默认采用 `ACC_W = 18`。
 
@@ -158,9 +152,7 @@ signed 17-bit 的正数上限为 65535，因此默认采用 `ACC_W = 18`。
 
 当前 RTL 的参数约束为：
 
-$$
-ACC\_W \ge 2\times DATA\_W
-$$
+$$ACC\_W \ge 2\times DATA\_W$$
 
 这只保证 accumulator 能容纳一个完整乘积，不自动保证任意 $K$ 下累加不溢出。
 
@@ -221,7 +213,7 @@ b_valid_out <- b_valid_in
 
 复位优先级高于转发、clear 和 MAC。若 `rst_n = 0`，本拍输入不会被转发或计算。
 
-baseline 系统中的 Controller、Array 和 PE 统一采用同步低有效复位。
+系统级是否统一采用同步复位，需要在顶层微架构冻结时再次确认；当前 PE RTL 已采用该语义。
 
 ## 11. 当前 RTL 对应关系
 
@@ -298,130 +290,33 @@ baseline 系统中的 Controller、Array 和 PE 统一采用同步低有效复�
 
 ### 13.4 内部连线
 
-阵列使用四组二维 link array：
+阵列使用四组包含两侧边界位置的二维 pipe array：
 
 ```systemverilog
-logic signed [DATA_W-1:0] a_link       [N-1:0][N-1:0];
-logic                     a_valid_link [N-1:0][N-1:0];
-logic signed [DATA_W-1:0] b_link       [N-1:0][N-1:0];
-logic                     b_valid_link [N-1:0][N-1:0];
+logic signed [DATA_W-1:0] a_pipe       [N-1:0][N:0];
+logic                     a_valid_pipe [N-1:0][N:0];
+logic signed [DATA_W-1:0] b_pipe       [N:0][N-1:0];
+logic                     b_valid_pipe [N:0][N-1:0];
 ```
 
-每个 PE 的输出统一写入自身坐标对应的 link。相邻 PE 根据行列位置选择边界信号或前一级 link，因此 PE 实例本身不需要边界特例。
+对 A 通路，`a_pipe[i][0]` 接收 `a_left[i]`，PE$(i,j)$ 从 `a_pipe[i][j]` 读取并写入 `a_pipe[i][j+1]`。对 B 通路，`b_pipe[0][j]` 接收 `b_top[j]`，PE$(i,j)$ 从 `b_pipe[i][j]` 读取并写入 `b_pipe[i+1][j]`。valid 使用完全相同的索引规则。
 
-最右列的 A 输出和最下行的 B 输出当前不暴露为顶层端口，也不参与结果计算。矩阵结果直接由 `psum[i][j]` 暴露。
+这种表示在 $N=1$ 时仍保留完整的“输入边界 → PE → 输出边界”通路，不会产生只为邻居服务、但在单 PE 配置中完全未使用的 link array。最右侧 A 和最下侧 B 的末端位置当前不暴露为模块端口，也不参与结果计算。矩阵结果直接由 `psum[i][j]` 暴露。
 
 ### 13.5 全局控制信号
 
-所有 PE 共享 `clk`、`rst_n` 和 `acc_clear`。当前 `acc_clear` 直接广播，不在阵列内部增加延迟。Controller 保证该广播与 Cycle 0 边界输入遵循已冻结的 clear/MAC 同拍语义。
+所有 PE 共享 `clk`、`rst_n` 和 `acc_clear`。当前 `acc_clear` 直接广播，不在阵列内部增加延迟。controller 已保证该广播与 Cycle 0 边界输入遵循已冻结的 clear/MAC 同拍语义。
 
-## 14. Input Feeder 微架构
+## 14. Feeder、Controller 与系统顶层
 
-`input_feeder` 是无时钟、无内部状态的组合调度模块。输入矩阵形状为：
+baseline feeder 是组合索引调度器，不保存矩阵。周期 $t$ 时，第 $i$ 行在 $i\le t<i+K$ 时注入 `A[i][t-i]`；第 $j$ 列在 $j\le t<j+K$ 时注入 `B[t-j][j]`。`enable=0` 时所有边界 valid 为 0，invalid lane 的 data 固定为 0。
 
-- `a_matrix[N][K]`；
-- `b_matrix[K][N]`。
-
-输出为阵列左边界和上边界的 A/B 数据及 valid。它根据 `cycle_idx=t` 实现：
-
-```text
-a_left[i] = a_matrix[i][t-i],  when i <= t < i+K
-b_top[j]  = b_matrix[t-j][j],  when j <= t < j+K
-```
-
-条件不成立时，对应 data 输出 0、valid 输出 0。RTL 在执行减法索引前先检查 `t>=i/j`，避免无符号下溢。
-
-feeder 的 `enable` 输入由 `busy` 驱动。`enable=0` 时全部输出 invalid，防止复位后或 operation 完成后因 `cycle_idx` 停留而重复注入。
-
-## 15. Controller 微架构
-
-Controller 使用 `busy` 表示两种逻辑状态：
-
-| 状态 | `busy` | 行为 |
-|---|---:|---|
-| IDLE | 0 | 等待 `start`，feeder 禁用 |
-| RUN | 1 | 驱动 `cycle_idx`，启用 feeder，并在末周期产生完成事件 |
-
-### 15.1 启动与 Cycle 0
-
-当 IDLE 状态在上升沿采样到 `start=1`：
-
-- `busy` 置 1；
-- `cycle_idx` 置 0；
-- 随后的时钟区间成为 Cycle 0；
-- feeder 组合产生 Cycle 0 边界数据；
-- `acc_clear = busy && (cycle_idx == 0)`。
-
-下一个上升沿同时提交 accumulator clear 和 Cycle 0 的首批 MAC。运行期间再次出现的 `start` 被忽略。
-
-### 15.2 计数与完成
-
-计算窗口总长度为：
+controller 在 IDLE 上升沿采样到 `start=1` 后进入 RUN，边沿后的 `cycle_idx=0`。Cycle 0 同时广播 `acc_clear=1` 并允许首批 MAC。总计算窗口为：
 
 $$
 TOTAL\_CYCLES=K+2N-2
 $$
 
-最后一个计算周期编号为：
+提交 `LAST_CYCLE=K+2N-3` 的上升沿后，`done=1`、`busy=0`，全部结果有效。`done` 为单拍脉冲；RUN 中的 `start` 被忽略。
 
-$$
-LAST\_CYCLE=K+2N-3
-$$
-
-当 `cycle_idx==LAST_CYCLE` 的上升沿到达时，阵列提交右下角最后一次 MAC；同一边沿后 Controller 令 `busy=0` 并将 `done` 拉高一拍。此时完整结果可读。下一拍 `done` 自动回到 0。
-
-## 16. 顶层微架构
-
-`systolic_array_top` 只进行参数统一和模块连接：
-
-```text
-start
-  -> systolic_controller
-       -> busy, cycle_idx -> input_feeder
-       -> acc_clear       -> systolic_array
-
-a_matrix, b_matrix
-  -> input_feeder
-       -> a_left/b_top and valid
-            -> systolic_array
-                 -> result[N][N]
-```
-
-顶层不复制或缓存输入矩阵。调用方必须在 `start` 被采样前提供稳定矩阵，并保持到 `done`。结果直接映射到各 PE 的 accumulator；baseline 不提供索引读取、串行排出或结果握手。
-
-## 17. 参数与接口约束
-
-- $N>0$；
-- $K>0$；
-- `DATA_W > 0`；
-- `ACC_W >= 2 * DATA_W`；
-- `CYCLE_W` 必须能表示 `0 ... K+2N-3`；
-- 默认 `ACC_W=18` 只保证最多四个 8-bit signed 极值乘积的累加；
-- A/B 在 `busy=1` 期间不得改变。
-
-`CYCLE_W` 的 baseline 推导为：当 `TOTAL_CYCLES<=1` 时取 1，否则取 `$clog2(TOTAL_CYCLES)`。Controller 和 feeder 使用同一宽度。
-
-## 18. 当前验证资产与状态
-
-已编写以下自检式 testbench：
-
-| Testbench | 主要覆盖 |
-|---|---|
-| `tb_systolic_pe.sv` | signed MAC、clear、hold、独立 forwarding、复位优先级 |
-| `tb_systolic_array.sv` | $2\times2$ 手工 skew、逐拍 accumulator、drain、广播 clear |
-| `tb_input_feeder.sv` | $N=2,K=2$、$N=2,K=3$、invalid 清零和 disable 行为 |
-| `tb_systolic_controller.sv` | 启动延迟、计数、单拍 done、busy 时忽略 start、$N=1,K=1$ |
-| `tb_systolic_array_top.sv` | 两轮 $2\times2$ 运算、结果保持、$2\times3\cdot3\times2$ 端到端运算 |
-
-当前环境尚未安装 SystemVerilog 仿真器。上述 testbench 已完成设计和人工检查，但尚未编译或执行，因此当前状态是“待验证”，不能记为“通过”。
-
-首次回归应按 PE、Array、Feeder、Controller、Top 的顺序执行，以保持故障定位能力。回归通过前不继续扩展 $4\times4$、随机验证、利用率计数器、SRAM/AXI 或 PPA。
-
-## 19. 后续开放问题
-
-1. 更大 $K$ 下 `ACC_W` 的自动推导与溢出语义；
-2. `N=4` 参数化回归和 PPA；
-3. 每个 PE 每轮恰好执行 $K$ 次 MAC 的 assertion 或计数验证；
-4. 索引式 feeder 与延迟链式 feeder 的实现代价比较；
-5. 连续 operation、流式输入和 memory system 的后续接口；
-6. 并行结果端口是否替换为索引读取或串行排出。
+系统顶层将 `busy` 作为 feeder 的 `enable`，将 controller 的 `acc_clear` 广播到裸阵列，并直接暴露全部 `result[i][j]`。当前仍未支持连续波前重叠、矩阵写入协议、结果索引读取或 ready/valid backpressure；这些属于 baseline 之外的扩展问题。
