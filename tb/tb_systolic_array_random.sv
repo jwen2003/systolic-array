@@ -23,6 +23,7 @@ module tb_systolic_array_random #(
 
     logic [31:0] rng_state;
     int unsigned completed_tests;
+    int unsigned mac_count [N-1:0][N-1:0];
 
     systolic_array_top #(
         .N     (N),
@@ -43,6 +44,37 @@ module tb_systolic_array_random #(
     initial begin
         clk = 1'b0;
         forever #5 clk = ~clk;
+    end
+
+    // Count committed MAC operations at every PE without modifying the RTL.
+    always_ff @(posedge clk) begin
+        if (!rst_n) begin
+            for (int i = 0; i < N; i++) begin
+                for (int j = 0; j < N; j++) begin
+                    mac_count[i][j] <= 0;
+                end
+            end
+        end else if (dut.acc_clear) begin
+            for (int i = 0; i < N; i++) begin
+                for (int j = 0; j < N; j++) begin
+                    if (dut.u_array.a_valid_pe_in[i][j]
+                        && dut.u_array.b_valid_pe_in[i][j]) begin
+                        mac_count[i][j] <= 1;
+                    end else begin
+                        mac_count[i][j] <= 0;
+                    end
+                end
+            end
+        end else begin
+            for (int i = 0; i < N; i++) begin
+                for (int j = 0; j < N; j++) begin
+                    if (dut.u_array.a_valid_pe_in[i][j]
+                        && dut.u_array.b_valid_pe_in[i][j]) begin
+                        mac_count[i][j] <= mac_count[i][j] + 1;
+                    end
+                end
+            end
+        end
     end
 
     // Use a local PRNG so identical seeds generate identical matrices.
@@ -120,8 +152,8 @@ module tb_systolic_array_random #(
             $display("Expected / actual result:");
             for (int i = 0; i < N; i++) begin
                 for (int j = 0; j < N; j++) begin
-                    $display("  C[%0d][%0d]: expected=%0d actual=%0d",
-                             i, j, expected[i][j], result[i][j]);
+                    $display("  C[%0d][%0d]: expected=%0d actual=%0d mac_count=%0d",
+                             i, j, expected[i][j], result[i][j], mac_count[i][j]);
                 end
             end
         end
@@ -136,6 +168,23 @@ module tb_systolic_array_random #(
                     if (result[i][j] !== expected[i][j]) begin
                         print_failure_context(operation_idx);
                         $fatal(1, "Result mismatch at C[%0d][%0d]", i, j);
+                    end
+                end
+            end
+        end
+    endtask
+
+    task automatic check_mac_counts(
+        input int unsigned operation_idx
+    );
+        begin
+            for (int i = 0; i < N; i++) begin
+                for (int j = 0; j < N; j++) begin
+                    if (mac_count[i][j] != K) begin
+                        print_failure_context(operation_idx);
+                        $fatal(1,
+                               "PE[%0d][%0d] expected %0d MAC operations, observed %0d",
+                               i, j, K, mac_count[i][j]);
                     end
                 end
             end
@@ -192,6 +241,7 @@ module tb_systolic_array_random #(
             end
 
             check_all_results(operation_idx);
+            check_mac_counts(operation_idx);
             completed_tests++;
         end
     endtask
@@ -255,6 +305,7 @@ module tb_systolic_array_random #(
 
         $display("Random regression: N=%0d K=%0d DATA_W=%0d ACC_W=%0d tests=%0d seed=0x%08x",
                  N, K, DATA_W, ACC_W, NUM_RANDOM_TESTS, SEED);
+        $display("Structural monitor enabled: every PE must commit exactly K MAC operations.");
 
         // Apply a synchronous reset before the first operation.
         @(posedge clk);
