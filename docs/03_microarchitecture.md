@@ -327,4 +327,6 @@ $$
 
 层次化 monitor 直接观察每个 PE 的 `a_valid_pe_in && b_valid_pe_in`，并在 operation 完成后检查每个 PE 的 MAC 次数等于 $K$。该 monitor 不修改可综合数据通路。
 
-当前尚未直接证明每次 MAC 的操作数身份和精确周期。下一步 monitor 将对全局 Cycle $t$ 计算 $k=t-i-j$，并在 $0\le k<K$ 时检查 PE$(i,j)$ 的输入为 `A[i][k]` 与 `B[k][j]`；无合法 $k$ 时不得出现双 valid。
+逐拍 pairing monitor 已对全局 Cycle $t$ 计算 $k=t-i-j$，并在 $0\le k<K$ 时检查 PE$(i,j)$ 的输入为 `A[i][k]` 与 `B[k][j]`；无合法 $k$ 时检查不得出现双 valid。该 monitor 已在六种配置、600 轮 operation 中通过，且未修改可综合数据通路。
+
+参数化端到端 TB 现已加入系统协议 monitor，覆盖 controller 计数与完成转换、`done` 单拍、`done`/`busy` 互斥、`acc_clear` 定义、idle feeder valid、同步 reset 后全部 PE 状态，以及 RUN 期间输入矩阵稳定性。上述检查与九类确定性 corner cases 已由统一回归脚本在六种配置中通过。

@@ -2,10 +2,10 @@
 
 ## 1. 文档状态
 
-- 状态：第三版，baseline 定向回归、完整参数矩阵随机回归与 MAC 次数结构 monitor 已通过
+- 状态：第四版，baseline 定向回归、完整参数矩阵随机回归、MAC 次数与 pairing monitor 已通过
 - 验证对象：PE、裸阵列、Input Feeder、Controller 与系统顶层
 - 当前工具：Verilator `--binary --timing --Wall`
-- 当前证据边界：已在六种参数配置、600 轮可复现随机 operation 中证明结果、完成周期和每 PE MAC 次数；协议 assertions、逐拍数据配对与定向 corner-case 扩展仍待完成
+- 当前证据边界：六种参数配置各通过 9 个确定性 corner 和 100 轮可复现随机 operation，共 654 轮；结果、完成周期、每 PE MAC 次数、逐拍数据配对及系统协议均正确
 
 本文档定义 Systolic Array MVP 需要证明什么、使用什么证据证明，以及何时可以进入综合和 PPA。测试数量本身不是目标；每项测试必须对应明确的设计契约或失败模式。
 
@@ -204,7 +204,7 @@ $$
 
 ### 6.4 定向 corner case 插入
 
-纯均匀随机不保证及时命中关键边界，因此后续仍需插入：
+参数化端到端 TB 已在随机 operation 前插入九类确定性 pattern：
 
 - 全 0；
 - 单位矩阵；
@@ -214,11 +214,13 @@ $$
 - 127；
 - -128；
 - 127 与 -128 混合；
-- 行或列完全为 0。
+- 同时包含零行和零列。
+
+这些 pattern 复用同一 signed 参考模型、完成周期检查、每 PE MAC count monitor、逐拍 pairing monitor 和协议 monitor，并已在六种参数配置中全部通过。
 
 ## 7. 协议性质
 
-后续 assertion 或 testbench monitor 至少证明：
+参数化端到端 TB 的协议 monitor 已实现以下检查：
 
 1. `busy=0` 时 feeder 所有 valid 为 0；
 2. `acc_clear` 当且仅当 `busy=1 && cycle_idx=0`；
@@ -235,13 +237,13 @@ $$
 
 1. 无 `acc_clear` 且无双 valid 时，`psum_out` 保持：PE 定向测试已证明；
 2. A/B 输出 data 与 valid 等于上一拍对应输入：PE 与裸阵列定向测试已证明；
-3. PE$(i,j)$ 在周期 $i+j+k$ 使用 $A[i][k]$ 与 $B[k][j]$：尚待逐拍配对 monitor 或 assertion 直接证明；
+3. PE$(i,j)$ 在周期 $i+j+k$ 使用 $A[i][k]$ 与 $B[k][j]$：六种配置、600 轮 operation 的逐拍 pairing monitor 已直接证明；
 4. 每个 PE 每轮恰好执行 $K$ 次 MAC：六种随机配置、600 轮 operation 已由层次化 monitor 直接证明；
 5. 每轮总有效 MAC 数为 $N^2K$：由所有 $N^2$ 个 PE 的独立 MAC 次数检查共同证明；
-6. 最后一项发生在 PE$(N-1,N-1)$ 的 `LAST_CYCLE`：尚待专门的末拍 monitor 直接证明；
+6. 最后一项发生在 PE$(N-1,N-1)$ 的 `LAST_CYCLE`：pairing monitor 已直接覆盖合法窗口及窗口外无双 valid；
 7. `done` 与最后一次 accumulator 更新在同一提交边沿后可见：顶层定向与随机回归已观察结果和完成周期，但仍可增加 assertion 固化。
 
-其中第 4～5 项已经采用层次化 monitor 直接检查，没有为了验证方便改变可综合数据通路。第 3、6 项仍不能只通过最终矩阵结果或 MAC 总次数间接推断，后续需要逐拍 monitor 或 assertion。
+第 3～6 项均采用层次化 monitor 直接检查，没有为了验证方便改变可综合数据通路。
 
 ## 9. 参数化回归矩阵
 
@@ -319,7 +321,7 @@ baseline 至少覆盖：
 
 满足这些条件后，综合结果才建立在足够稳定的功能 baseline 上。PPA 阶段若改变 pipeline、feeder 或接口结构，必须重新运行全部相关回归。
 
-当前尚未满足的主要退出项为：定向 corner cases、逐拍 $A[i][k]/B[k][j]$ 配对 monitor，以及第 7 章所列协议性质的系统化 assertion/monitor。完整参数回归矩阵和每 PE MAC 次数检查已经关闭。
+逐拍 $A[i][k]/B[k][j]$ pairing monitor、定向 corner cases、协议 monitor 与统一脚本均已关闭。`scripts/run_regression.sh` 已在 Verilator 5.032 下确认五组定向 TB、六种参数配置和 `--Wall` 全部通过；当前已满足进入首次综合与 PPA 的功能退出条件。
 
 ## 13. 当前 checkpoint 结论
 
@@ -335,8 +337,7 @@ baseline 至少覆盖：
 
 ### 13.2 尚不能宣称的结论
 
-- 尚未由逐拍 monitor 直接证明每次 MAC 使用正确的 `A[i][k]` 与 `B[k][j]`；
-- 尚未系统化检查所有 controller/feeder 协议性质；
-- 均匀随机回归不能替代明确的极值与结构化 corner cases；
+- pairing monitor 已直接证明每次 MAC 使用正确的 `A[i][k]` 与 `B[k][j]`；
+- controller/feeder/reset/输入稳定协议 monitor 与明确的极值、结构化 corner cases 已在六种配置中通过；
 - 尚未获得综合后的频率、面积、资源映射、关键路径或功耗证据；
 - 当前六种配置通过不等价于任意参数组合均正确。

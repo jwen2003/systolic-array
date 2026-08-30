@@ -10,6 +10,9 @@ module tb_systolic_array_random #(
 );
 
     localparam int TOTAL_CYCLES = K + (2 * N) - 2;
+    localparam int LAST_CYCLE   = TOTAL_CYCLES - 1;
+    localparam int NUM_CORNERS  = 9;
+    localparam int CYCLE_W      = (TOTAL_CYCLES <= 1) ? 1 : $clog2(TOTAL_CYCLES);
 
     logic                             clk;
     logic                             rst_n;
@@ -25,6 +28,12 @@ module tb_systolic_array_random #(
     int unsigned completed_tests;
     int unsigned active_operation_idx;
     int unsigned mac_count [N-1:0][N-1:0];
+    logic prev_valid;
+    logic prev_busy;
+    logic prev_done;
+    logic [CYCLE_W-1:0] prev_cycle_idx;
+    logic signed [DATA_W-1:0] stable_a [N-1:0][K-1:0];
+    logic signed [DATA_W-1:0] stable_b [K-1:0][N-1:0];
 
     systolic_array_top #(
         .N     (N),
@@ -101,6 +110,83 @@ module tb_systolic_array_random #(
         end
     end
 
+    // Check the frozen system protocol without adding logic to the DUT.
+    always @(posedge clk) begin
+        #1;
+        if (!rst_n) begin
+            if ((busy !== 1'b0) || (done !== 1'b0)
+                || (dut.cycle_idx !== '0) || (dut.acc_clear !== 1'b0)) begin
+                $fatal(1, "Protocol reset mismatch");
+            end
+            for (int i = 0; i < N; i++) begin
+                for (int j = 0; j < N; j++) begin
+                    if ((result[i][j] !== '0)
+                        || (dut.u_array.a_pipe[i][j+1] !== '0)
+                        || (dut.u_array.a_valid_pipe[i][j+1] !== 1'b0)
+                        || (dut.u_array.b_pipe[i+1][j] !== '0)
+                        || (dut.u_array.b_valid_pipe[i+1][j] !== 1'b0)) begin
+                        $fatal(1, "PE[%0d][%0d] state did not reset", i, j);
+                    end
+                end
+            end
+            prev_valid <= 1'b0;
+        end else begin
+            if (dut.acc_clear !== (busy && (dut.cycle_idx == '0))) begin
+                $fatal(1, "acc_clear protocol mismatch");
+            end
+            if (done && busy) begin
+                $fatal(1, "done and busy must not be high together");
+            end
+            if (prev_valid && prev_done && done) begin
+                $fatal(1, "done must be a single-cycle pulse");
+            end
+            if (prev_valid && prev_busy) begin
+                if (int'($unsigned(prev_cycle_idx)) == LAST_CYCLE) begin
+                    if (!done || busy || (dut.cycle_idx !== prev_cycle_idx)) begin
+                        $fatal(1, "Final-cycle completion protocol mismatch");
+                    end
+                end else if (!busy || done
+                             || (int'($unsigned(dut.cycle_idx))
+                                 != (int'($unsigned(prev_cycle_idx)) + 1))) begin
+                    $fatal(1, "RUN cycle progression mismatch");
+                end
+            end
+
+            for (int i = 0; i < N; i++) begin
+                if (!busy && (dut.a_valid_left[i] || dut.b_valid_top[i])) begin
+                    $fatal(1, "Feeder valid asserted while idle on lane %0d", i);
+                end
+            end
+
+            if (busy && (!prev_valid || !prev_busy)) begin
+                for (int i = 0; i < N; i++) begin
+                    for (int k = 0; k < K; k++) stable_a[i][k] <= a_matrix[i][k];
+                end
+                for (int k = 0; k < K; k++) begin
+                    for (int j = 0; j < N; j++) stable_b[k][j] <= b_matrix[k][j];
+                end
+            end else if (busy) begin
+                for (int i = 0; i < N; i++) begin
+                    for (int k = 0; k < K; k++) begin
+                        if (a_matrix[i][k] !== stable_a[i][k])
+                            $fatal(1, "A changed during RUN at [%0d][%0d]", i, k);
+                    end
+                end
+                for (int k = 0; k < K; k++) begin
+                    for (int j = 0; j < N; j++) begin
+                        if (b_matrix[k][j] !== stable_b[k][j])
+                            $fatal(1, "B changed during RUN at [%0d][%0d]", k, j);
+                    end
+                end
+            end
+
+            prev_valid <= 1'b1;
+            prev_busy <= busy;
+            prev_done <= done;
+            prev_cycle_idx <= dut.cycle_idx;
+        end
+    end
+
     // Count committed MAC operations at every PE without modifying the RTL.
     always_ff @(posedge clk) begin
         if (!rst_n) begin
@@ -156,6 +242,41 @@ module tb_systolic_array_random #(
             for (int k = 0; k < K; k++) begin
                 for (int j = 0; j < N; j++) begin
                     b_matrix[k][j] = DATA_W'(next_random());
+                end
+            end
+        end
+    endtask
+
+    task automatic generate_corner_matrices(input int unsigned corner_idx);
+        begin
+            for (int i = 0; i < N; i++) begin
+                for (int k = 0; k < K; k++) begin
+                    case (corner_idx)
+                        0: a_matrix[i][k] = '0;
+                        1: a_matrix[i][k] = (i == k) ? DATA_W'(1) : '0;
+                        2: a_matrix[i][k] = ((i == 0) && (k == 0)) ? DATA_W'(7) : '0;
+                        3: a_matrix[i][k] = DATA_W'(1);
+                        4: a_matrix[i][k] = ((i + k) % 2 == 0) ? DATA_W'(1) : -DATA_W'(1);
+                        5: a_matrix[i][k] = DATA_W'(127);
+                        6: a_matrix[i][k] = -DATA_W'(128);
+                        7: a_matrix[i][k] = ((i + k) % 2 == 0) ? DATA_W'(127) : -DATA_W'(128);
+                        default: a_matrix[i][k] = (i == 0) ? '0 : DATA_W'(i + k + 1);
+                    endcase
+                end
+            end
+            for (int k = 0; k < K; k++) begin
+                for (int j = 0; j < N; j++) begin
+                    case (corner_idx)
+                        0: b_matrix[k][j] = '0;
+                        1: b_matrix[k][j] = DATA_W'(k * N + j + 1);
+                        2: b_matrix[k][j] = ((k == 0) && (j == 0)) ? -DATA_W'(9) : '0;
+                        3: b_matrix[k][j] = DATA_W'(1);
+                        4: b_matrix[k][j] = ((k + j) % 2 == 0) ? -DATA_W'(1) : DATA_W'(1);
+                        5: b_matrix[k][j] = DATA_W'(127);
+                        6: b_matrix[k][j] = -DATA_W'(128);
+                        7: b_matrix[k][j] = ((k + j) % 2 == 0) ? -DATA_W'(128) : DATA_W'(127);
+                        default: b_matrix[k][j] = (j == (N - 1)) ? '0 : -DATA_W'(k + j + 1);
+                    endcase
                 end
             end
         end
@@ -246,13 +367,12 @@ module tb_systolic_array_random #(
         end
     endtask
 
-    task automatic run_operation(
+    task automatic run_loaded_operation(
         input int unsigned operation_idx
     );
         int observed_run_cycles;
         begin
             active_operation_idx = operation_idx;
-            generate_random_matrices();
             calculate_expected();
 
             @(negedge clk);
@@ -302,6 +422,13 @@ module tb_systolic_array_random #(
         end
     endtask
 
+    task automatic run_random_operation(input int unsigned operation_idx);
+        begin
+            generate_random_matrices();
+            run_loaded_operation(operation_idx);
+        end
+    endtask
+
     task automatic wait_random_idle(
         input int unsigned operation_idx
     );
@@ -345,6 +472,10 @@ module tb_systolic_array_random #(
 
         completed_tests = 0;
         active_operation_idx = 0;
+        prev_valid       = 1'b0;
+        prev_busy        = 1'b0;
+        prev_done        = 1'b0;
+        prev_cycle_idx   = '0;
         rst_n           = 1'b0;
         start           = 1'b0;
         rng_state       = (SEED == 0) ? 32'h1 : SEED;
@@ -364,20 +495,27 @@ module tb_systolic_array_random #(
                  N, K, DATA_W, ACC_W, NUM_RANDOM_TESTS, SEED);
         $display("Structural monitor enabled: every PE must commit exactly K MAC operations.");
         $display("Pairing monitor enabled: every PE must receive the expected A[i][k] and B[k][j] each cycle.");
+        $display("Protocol monitor enabled: controller, feeder, reset, and input-stability contracts are checked.");
 
         // Apply a synchronous reset before the first operation.
         @(posedge clk);
         #1;
         rst_n = 1'b1;
 
+        for (int unsigned corner_idx = 0; corner_idx < NUM_CORNERS; corner_idx++) begin
+            generate_corner_matrices(corner_idx);
+            run_loaded_operation(corner_idx);
+            wait_random_idle(corner_idx);
+        end
+
         for (int unsigned operation_idx = 0;
              operation_idx < NUM_RANDOM_TESTS;
              operation_idx++) begin
-            run_operation(operation_idx);
-            wait_random_idle(operation_idx);
+            run_random_operation(NUM_CORNERS + operation_idx);
+            wait_random_idle(NUM_CORNERS + operation_idx);
         end
 
-        $display("All %0d random systolic array operations passed for N=%0d K=%0d seed=0x%08x.",
+        $display("All %0d corner/random systolic array operations passed for N=%0d K=%0d seed=0x%08x.",
                  completed_tests, N, K, SEED);
         $finish;
     end
