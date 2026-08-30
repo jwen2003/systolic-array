@@ -2,7 +2,7 @@
 
 ## 1. 文档状态
 
-- 状态：第二版，baseline 定向回归与第一阶段随机/结构回归已通过
+- 状态：第三版，baseline 定向回归、完整参数矩阵随机回归与 MAC 次数结构 monitor 已通过
 - 验证对象：PE、裸阵列、Input Feeder、Controller 与系统顶层
 - 当前工具：Verilator `--binary --timing --Wall`
 - 当前证据边界：已在六种参数配置、600 轮可复现随机 operation 中证明结果、完成周期和每 PE MAC 次数；协议 assertions、逐拍数据配对与定向 corner-case 扩展仍待完成
@@ -320,3 +320,23 @@ baseline 至少覆盖：
 满足这些条件后，综合结果才建立在足够稳定的功能 baseline 上。PPA 阶段若改变 pipeline、feeder 或接口结构，必须重新运行全部相关回归。
 
 当前尚未满足的主要退出项为：定向 corner cases、逐拍 $A[i][k]/B[k][j]$ 配对 monitor，以及第 7 章所列协议性质的系统化 assertion/monitor。完整参数回归矩阵和每 PE MAC 次数检查已经关闭。
+
+## 13. 当前 checkpoint 结论
+
+### 13.1 已建立的证据
+
+- 五组模块级和顶层定向 testbench 全部通过；
+- 六种参数配置各完成 100 轮固定 seed 随机 operation，共 600 轮；
+- 全部随机结果与独立 signed 参考模型一致；
+- 每轮完成周期均符合 $K+2N-2$；
+- 每个 PE 每轮 MAC 次数均等于 $K$，因此每轮总有效 MAC 数为 $N^2K$；
+- $N=1$ 的边界完整 pipe 重构后，裸阵列、$N=2,K=2$ 和 $N=4,K=4$ 代表性回归重新通过；
+- 当前回归使用 Verilator `--binary --timing --Wall`，无未裁决 warning。
+
+### 13.2 尚不能宣称的结论
+
+- 尚未由逐拍 monitor 直接证明每次 MAC 使用正确的 `A[i][k]` 与 `B[k][j]`；
+- 尚未系统化检查所有 controller/feeder 协议性质；
+- 均匀随机回归不能替代明确的极值与结构化 corner cases；
+- 尚未获得综合后的频率、面积、资源映射、关键路径或功耗证据；
+- 当前六种配置通过不等价于任意参数组合均正确。

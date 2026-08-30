@@ -2,7 +2,7 @@
 
 ## 1. 文档状态
 
-- 状态：第二版，PE、裸阵列、feeder、controller 与系统顶层 baseline 已冻结并实现
+- 状态：第三版，baseline 微架构已冻结、实现并通过完整参数回归矩阵
 - 对应 RTL：`rtl/systolic_pe.sv`、`rtl/systolic_array.sv`、`rtl/input_feeder.sv`、`rtl/systolic_controller.sv`、`rtl/systolic_array_top.sv`
 - 当前目的：记录 baseline 的状态语义、空间拓扑、时间调度、组合路径、控制协议和参数约束
 
@@ -77,7 +77,7 @@ module systolic_pe #(
 | `b_valid_out` | 与 `b_out` 对齐的 valid |
 | `psum_out` | 本 PE 保存的 output-stationary accumulator |
 
-当前 PE 没有 `ready`、`stall` 或 `psum_valid_out`。是否完成由未来的阵列 controller 判断。
+当前 PE 没有 `ready`、`stall` 或 `psum_valid_out`。完成时刻由系统级 controller 根据固定计算窗口判断。
 
 ## 5. PE 内部状态
 
@@ -213,7 +213,7 @@ b_valid_out <- b_valid_in
 
 复位优先级高于转发、clear 和 MAC。若 `rst_n = 0`，本拍输入不会被转发或计算。
 
-系统级是否统一采用同步复位，需要在顶层微架构冻结时再次确认；当前 PE RTL 已采用该语义。
+当前所有具有寄存状态的 baseline 模块统一采用同步低有效复位；组合式 feeder 不保存复位状态。
 
 ## 11. 当前 RTL 对应关系
 
@@ -229,9 +229,9 @@ b_valid_out <- b_valid_in
 
 代码注释固定使用英文；设计文档和验证说明使用中文。
 
-## 12. PE 验证要求
+## 12. PE 验证状态与后续 assertion
 
-定向测试至少覆盖：
+PE 定向 testbench 已通过 17 项检查，覆盖：
 
 1. 同步复位清除全部状态；
 2. 0 参与乘法；
@@ -248,7 +248,7 @@ b_valid_out <- b_valid_in
 13. valid 与 data 转发延迟恰好一拍；
 14. reset 对 clear 和 MAC 的优先级。
 
-关键 assertion 应至少证明：
+后续关键 assertion 仍应固化：
 
 - 无 clear 且无双 valid时，accumulator 不得改变；
 - A/B 输出及其 valid 等于上一拍对应输入；
@@ -320,3 +320,11 @@ $$
 提交 `LAST_CYCLE=K+2N-3` 的上升沿后，`done=1`、`busy=0`，全部结果有效。`done` 为单拍脉冲；RUN 中的 `start` 被忽略。
 
 系统顶层将 `busy` 作为 feeder 的 `enable`，将 controller 的 `acc_clear` 广播到裸阵列，并直接暴露全部 `result[i][j]`。当前仍未支持连续波前重叠、矩阵写入协议、结果索引读取或 ready/valid backpressure；这些属于 baseline 之外的扩展问题。
+
+## 15. 当前实现与验证 checkpoint
+
+当前五个 RTL 模块均已在 Verilator `--Wall` 下完成编译和定向回归。参数化随机顶层回归覆盖六种配置：$N=1,K=1$、$N=2,K=1$、$N=2,K=2$、$N=2,K=3$、$N=4,K=1$、$N=4,K=4$，每种 100 轮。
+
+层次化 monitor 直接观察每个 PE 的 `a_valid_pe_in && b_valid_pe_in`，并在 operation 完成后检查每个 PE 的 MAC 次数等于 $K$。该 monitor 不修改可综合数据通路。
+
+当前尚未直接证明每次 MAC 的操作数身份和精确周期。下一步 monitor 将对全局 Cycle $t$ 计算 $k=t-i-j$，并在 $0\le k<K$ 时检查 PE$(i,j)$ 的输入为 `A[i][k]` 与 `B[k][j]`；无合法 $k$ 时不得出现双 valid。
