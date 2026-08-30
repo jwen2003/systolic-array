@@ -23,6 +23,7 @@ module tb_systolic_array_random #(
 
     logic [31:0] rng_state;
     int unsigned completed_tests;
+    int unsigned active_operation_idx;
     int unsigned mac_count [N-1:0][N-1:0];
 
     systolic_array_top #(
@@ -44,6 +45,60 @@ module tb_systolic_array_random #(
     initial begin
         clk = 1'b0;
         forever #5 clk = ~clk;
+    end
+
+    // Check the exact A/B/k identity presented to every PE each RUN cycle.
+    task automatic check_cycle_pairing(
+        input int cycle_value
+    );
+        int k_value;
+        begin
+            for (int i = 0; i < N; i++) begin
+                for (int j = 0; j < N; j++) begin
+                    k_value = cycle_value - i - j;
+
+                    if ((k_value >= 0) && (k_value < K)) begin
+                        if ((dut.u_array.a_valid_pe_in[i][j] !== 1'b1)
+                            || (dut.u_array.b_valid_pe_in[i][j] !== 1'b1)) begin
+                            $fatal(1,
+                                   "Pairing valid mismatch: operation=%0d cycle=%0d PE[%0d][%0d] k=%0d a_valid=%0b b_valid=%0b",
+                                   active_operation_idx, cycle_value, i, j, k_value,
+                                   dut.u_array.a_valid_pe_in[i][j],
+                                   dut.u_array.b_valid_pe_in[i][j]);
+                        end
+
+                        if (dut.u_array.a_pe_in[i][j] !== a_matrix[i][k_value]) begin
+                            $fatal(1,
+                                   "A pairing mismatch: operation=%0d cycle=%0d PE[%0d][%0d] k=%0d expected=%0d actual=%0d",
+                                   active_operation_idx, cycle_value, i, j, k_value,
+                                   a_matrix[i][k_value], dut.u_array.a_pe_in[i][j]);
+                        end
+
+                        if (dut.u_array.b_pe_in[i][j] !== b_matrix[k_value][j]) begin
+                            $fatal(1,
+                                   "B pairing mismatch: operation=%0d cycle=%0d PE[%0d][%0d] k=%0d expected=%0d actual=%0d",
+                                   active_operation_idx, cycle_value, i, j, k_value,
+                                   b_matrix[k_value][j], dut.u_array.b_pe_in[i][j]);
+                        end
+                    end else begin
+                        if ((dut.u_array.a_valid_pe_in[i][j] !== 1'b0)
+                            || (dut.u_array.b_valid_pe_in[i][j] !== 1'b0)) begin
+                            $fatal(1,
+                                   "Unexpected PE activity: operation=%0d cycle=%0d PE[%0d][%0d] k=%0d a_valid=%0b b_valid=%0b",
+                                   active_operation_idx, cycle_value, i, j, k_value,
+                                   dut.u_array.a_valid_pe_in[i][j],
+                                   dut.u_array.b_valid_pe_in[i][j]);
+                        end
+                    end
+                end
+            end
+        end
+    endtask
+
+    always @(posedge clk) begin
+        if (rst_n && busy) begin
+            check_cycle_pairing(int'($unsigned(dut.cycle_idx)));
+        end
     end
 
     // Count committed MAC operations at every PE without modifying the RTL.
@@ -196,6 +251,7 @@ module tb_systolic_array_random #(
     );
         int observed_run_cycles;
         begin
+            active_operation_idx = operation_idx;
             generate_random_matrices();
             calculate_expected();
 
@@ -288,6 +344,7 @@ module tb_systolic_array_random #(
         end
 
         completed_tests = 0;
+        active_operation_idx = 0;
         rst_n           = 1'b0;
         start           = 1'b0;
         rng_state       = (SEED == 0) ? 32'h1 : SEED;
@@ -306,6 +363,7 @@ module tb_systolic_array_random #(
         $display("Random regression: N=%0d K=%0d DATA_W=%0d ACC_W=%0d tests=%0d seed=0x%08x",
                  N, K, DATA_W, ACC_W, NUM_RANDOM_TESTS, SEED);
         $display("Structural monitor enabled: every PE must commit exactly K MAC operations.");
+        $display("Pairing monitor enabled: every PE must receive the expected A[i][k] and B[k][j] each cycle.");
 
         // Apply a synchronous reset before the first operation.
         @(posedge clk);
