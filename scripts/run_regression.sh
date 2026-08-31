@@ -39,11 +39,11 @@ run_test feeder     tb_input_feeder        tb/tb_input_feeder.sv
 run_test controller tb_systolic_controller tb/tb_systolic_controller.sv
 run_test top        tb_systolic_array_top  tb/tb_systolic_array_top.sv
 
-for config in "1 1" "2 1" "2 2" "2 3" "4 1" "4 4"; do
+for config in "1 1" "2 1" "1 2" "2 2" "4 2" "2 3" "2 4" "4 4"; do
   read -r n k <<<"$config"
   run_test "random_n${n}_k${k}" tb_systolic_array_random \
     tb/tb_systolic_array_random.sv \
     "-GN=$n" "-GK=$k" "-GNUM_RANDOM_TESTS=$random_tests"
 done
 
-echo "Regression passed: 5 directed testbenches and 6 parameter configurations."
+echo "Regression passed: 5 directed testbenches and 8 parameter configurations."

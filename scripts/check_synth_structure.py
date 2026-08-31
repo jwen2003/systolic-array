@@ -1,216 +1,170 @@
 #!/usr/bin/env python3
-"""Validate generic synthesis structure against the frozen architecture."""
+"""Validate and summarize controlled generic-synthesis scaling results."""
 
-import json
-import math
-import re
-import sys
+import csv, json, math, re, sys
 from collections import Counter
 from pathlib import Path
 
-
-CONFIGS = {
-    "n1_k1": {"n": 1, "k": 1, "data_w": 8, "acc_w": 18},
-    "n2_k2": {"n": 2, "k": 2, "data_w": 8, "acc_w": 18},
-    "n4_k4": {"n": 4, "k": 4, "data_w": 8, "acc_w": 18},
-}
-
-
-def binary_parameter(value: str) -> int:
-    return int(value, 2)
+BASELINE_ADDERS = {"n1_k1", "n2_k2", "n4_k4"}
+SWEEP_BASES = {"n_sweep": "n1_k2", "k_sweep": "n2_k1"}
+METRICS = ("pe_result_markers", "multipliers", "accumulator_adders",
+           "controller_index_adders", "register_cells", "register_bits",
+           "pretech_cells", "generic_cells")
 
 
-def load_module(path: Path) -> dict:
+def load_configs(path):
+    with path.open(encoding="utf-8", newline="") as handle:
+        rows = list(csv.DictReader(handle, delimiter="\t"))
+    required = {"name", "N", "K", "DATA_W", "ACC_W", "experiment_group"}
+    if not rows or set(rows[0]) != required:
+        raise ValueError(f"invalid configuration schema: {path}")
+    configs, names = [], set()
+    for row in rows:
+        config = {"name": row["name"], "n": int(row["N"]), "k": int(row["K"]),
+                  "data_w": int(row["DATA_W"]), "acc_w": int(row["ACC_W"]),
+                  "experiment_groups": row["experiment_group"].split(",")}
+        name = config["name"]
+        if name in names or name != f"n{config['n']}_k{config['k']}":
+            raise ValueError(f"invalid or duplicate configuration: {name}")
+        if min(config[key] for key in ("n", "k", "data_w", "acc_w")) < 1:
+            raise ValueError(f"non-positive configuration value: {name}")
+        names.add(name); configs.append(config)
+    return configs
+
+
+def bparam(value): return int(value, 2)
+def width(cell, parameter): return bparam(cell["parameters"][parameter])
+
+
+def load_top(path):
     with path.open(encoding="utf-8") as handle:
-        design = json.load(handle)
-    return design["modules"]["systolic_array_top"]
+        return json.load(handle)["modules"]["systolic_array_top"]
 
 
-def cell_width(cell: dict, parameter: str) -> int:
-    return binary_parameter(cell["parameters"][parameter])
-
-
-def analyze(build_root: Path, name: str, config: dict) -> dict:
-    n = config["n"]
-    k = config["k"]
-    data_w = config["data_w"]
-    acc_w = config["acc_w"]
-    product_w = 2 * data_w
-    sign_index = data_w - 1
-    config_dir = build_root / name
-    module = load_module(config_dir / "pretech.json")
-    final_module = load_module(config_dir / "generic_netlist.json")
-    cells = module["cells"]
-
-    pe_pattern = re.compile(
-        r"^u_array\.gen_row\[\d+\]\.gen_col\[\d+\]\.u_pe\.psum_out$"
-    )
-    pe_result_nets = {
-        netname: net["bits"]
-        for netname, net in module["netnames"].items()
-        if pe_pattern.match(netname)
-    }
-    pe_result_markers = len(pe_result_nets)
-    pe_result_bit_vectors = {tuple(bits) for bits in pe_result_nets.values()}
-    cycle_bits = len(module["netnames"]["u_controller.cycle_idx"]["bits"])
-    multipliers = [cell for cell in cells.values() if cell["type"] == "$mul"]
-    adders = {
-        cell_name: cell
-        for cell_name, cell in cells.items()
-        if cell["type"] == "$add"
-    }
-    accumulator_adders = {
-        cell_name: cell
-        for cell_name, cell in adders.items()
-        if cell_width(cell, "A_WIDTH") == acc_w
-        and cell_width(cell, "B_WIDTH") == acc_w
-        and cell_width(cell, "Y_WIDTH") == acc_w
-        and tuple(cell["connections"]["A"]) in pe_result_bit_vectors
-    }
-    controller_index_adders = {
-        cell_name: cell
-        for cell_name, cell in adders.items()
-        if cell_name not in accumulator_adders
-    }
-    register_cells = [
-        cell
-        for cell in cells.values()
-        if re.match(r"^\$(?:s?dff|s?dffe)", cell["type"])
-    ]
-    register_bits = sum(cell_width(cell, "WIDTH") for cell in register_cells)
-    primitive_counts = dict(
-        sorted(Counter(cell["type"] for cell in final_module["cells"].values()).items())
-    )
-
-    expected_pes = n * n
-    expected_cycle_bits = max(1, math.ceil(math.log2(k + 2 * n - 2)))
-    expected_total_adders = expected_pes + 1
-    failures = []
-    if pe_result_markers != expected_pes:
-        failures.append(
-            f"PE result marker count {pe_result_markers}, expected {expected_pes}"
-        )
-    if cycle_bits != expected_cycle_bits:
-        failures.append(
-            f"cycle counter width {cycle_bits}, expected {expected_cycle_bits}"
-        )
-    if len(multipliers) != expected_pes:
-        failures.append(
-            f"multiplier count {len(multipliers)}, expected {expected_pes}"
-        )
-    if len(accumulator_adders) != expected_pes:
-        failures.append(
-            f"accumulator adder count {len(accumulator_adders)}, expected {expected_pes}"
-        )
-    if len(adders) != expected_total_adders:
-        failures.append(
-            f"total adder count {len(adders)}, fixed-tool baseline {expected_total_adders}"
-        )
-    for index, multiplier in enumerate(multipliers):
-        params = multiplier["parameters"]
-        a_bits = multiplier["connections"]["A"]
-        b_bits = multiplier["connections"]["B"]
-        a_is_sign_extended = len(a_bits) == product_w and all(
-            bit == a_bits[sign_index] for bit in a_bits[data_w:]
-        )
-        b_is_sign_extended = len(b_bits) == product_w and all(
-            bit == b_bits[sign_index] for bit in b_bits[data_w:]
-        )
-        if (
-            binary_parameter(params["A_SIGNED"]) != 1
-            or binary_parameter(params["B_SIGNED"]) != 1
-            or cell_width(multiplier, "A_WIDTH") != product_w
-            or cell_width(multiplier, "B_WIDTH") != product_w
-            or cell_width(multiplier, "Y_WIDTH") != product_w
-            or not a_is_sign_extended
-            or not b_is_sign_extended
-        ):
-            failures.append(
-                f"multiplier {index} is not sign-extended signed "
-                f"{data_w}x{data_w} -> {product_w}"
-            )
-
-    if not cells or not final_module["cells"]:
-        failures.append("top-level design was optimized to an empty cell set")
-
-    log_text = (config_dir / "yosys.log").read_text(encoding="utf-8")
-    if "Build succeeded: 0 errors, 0 warnings" not in log_text:
-        failures.append("Slang frontend did not report a clean build")
-    if log_text.count("Found and reported 0 problems.") != 4:
-        failures.append("not all four check passes reported zero problems")
-    if re.search(r"%(?:Warning|Error)|Warning:|ERROR:", log_text):
-        failures.append("Yosys log contains a warning or error diagnostic")
-
+def analyze(root, config):
+    name, n, k = config["name"], config["n"], config["k"]
+    data_w, acc_w = config["data_w"], config["acc_w"]
+    product_w, sign_index = 2 * data_w, data_w - 1
+    directory = root / name
+    top, final = load_top(directory / "pretech.json"), load_top(directory / "generic_netlist.json")
+    cells = top["cells"]
+    pattern = re.compile(r"^u_array\.gen_row\[\d+\]\.gen_col\[\d+\]\.u_pe\.psum_out$")
+    marker_vectors = {tuple(net["bits"]) for key, net in top["netnames"].items() if pattern.match(key)}
+    multipliers = {key: cell for key, cell in cells.items() if cell["type"] == "$mul"}
+    adders = {key: cell for key, cell in cells.items() if cell["type"] == "$add"}
+    accumulators = {key: cell for key, cell in adders.items()
+                    if width(cell, "A_WIDTH") == acc_w and width(cell, "B_WIDTH") == acc_w
+                    and width(cell, "Y_WIDTH") == acc_w
+                    and tuple(cell["connections"]["A"]) in marker_vectors}
+    others = {key: cell for key, cell in adders.items() if key not in accumulators}
+    registers = [cell for cell in cells.values() if re.match(r"^\$(?:s?dff|s?dffe)", cell["type"])]
+    reg_bits = sum(width(cell, "WIDTH") for cell in registers)
+    primitives = dict(sorted(Counter(cell["type"] for cell in final["cells"].values()).items()))
+    cycle_bits = len(top["netnames"]["u_controller.cycle_idx"]["bits"])
+    expected, failures = n * n, []
+    expected_cycle = max(1, math.ceil(math.log2(k + 2 * n - 2)))
+    checks = ((len(marker_vectors), expected, "PE result markers"),
+              (len(multipliers), expected, "multipliers"),
+              (len(accumulators), expected, "accumulator adders"),
+              (cycle_bits, expected_cycle, "cycle counter width"))
+    for actual, wanted, label in checks:
+        if actual != wanted: failures.append(f"{label} {actual}, expected {wanted}")
+    if name in BASELINE_ADDERS and len(adders) != expected + 1:
+        failures.append(f"total adders {len(adders)}, fixed-tool baseline {expected + 1}")
+    for cell_name, cell in multipliers.items():
+        a, b, params = cell["connections"]["A"], cell["connections"]["B"], cell["parameters"]
+        extended = (len(a) == product_w and len(b) == product_w
+                    and all(bit == a[sign_index] for bit in a[data_w:])
+                    and all(bit == b[sign_index] for bit in b[data_w:]))
+        valid = (bparam(params["A_SIGNED"]) == bparam(params["B_SIGNED"]) == 1
+                 and width(cell, "A_WIDTH") == width(cell, "B_WIDTH") == product_w
+                 and width(cell, "Y_WIDTH") == product_w and extended)
+        if not valid: failures.append(f"multiplier {cell_name} signed width/extension mismatch")
+    if not cells or not final["cells"]: failures.append("top cell set is empty")
+    log = (directory / "yosys.log").read_text(encoding="utf-8")
+    if "Build succeeded: 0 errors, 0 warnings" not in log: failures.append("Slang build not clean")
+    if log.count("Found and reported 0 problems.") != 4: failures.append("four clean checks not found")
+    if re.search(r"%(?:Warning|Error)|Warning:|ERROR:", log): failures.append("diagnostic in Yosys log")
     if n == 1:
-        expected_pipe_widths = {
-            "u_array.a_pipe": 2 * data_w,
-            "u_array.a_valid_pipe": 2,
-            "u_array.b_pipe": 2 * data_w,
-            "u_array.b_valid_pipe": 2,
-        }
-        for netname, width in expected_pipe_widths.items():
-            actual = len(module["netnames"][netname]["bits"])
-            if actual != width:
-                failures.append(f"{netname} width {actual}, expected {width}")
-
-    result = {
-        "config": name,
-        "parameters": config,
-        "expected_product_width": product_w,
-        "pe_result_markers": pe_result_markers,
-        "cycle_counter_bits": cycle_bits,
-        "multipliers": len(multipliers),
-        "accumulator_adders": len(accumulator_adders),
-        "controller_index_adders": len(controller_index_adders),
-        "total_adders": len(adders),
-        "fixed_tool_total_adder_baseline": expected_total_adders,
-        "register_cells": len(register_cells),
-        "register_bits": register_bits,
-        "pretech_cells": len(cells),
-        "generic_cells": len(final_module["cells"]),
-        "techmap_primitives": primitive_counts,
-        "failures": failures,
-    }
-    (config_dir / "structure_summary.json").write_text(
-        json.dumps(result, indent=2) + "\n", encoding="utf-8"
-    )
+        for net, wanted in {"u_array.a_pipe": 2 * data_w, "u_array.a_valid_pipe": 2,
+                            "u_array.b_pipe": 2 * data_w, "u_array.b_valid_pipe": 2}.items():
+            actual = len(top["netnames"][net]["bits"])
+            if actual != wanted: failures.append(f"{net} width {actual}, expected {wanted}")
+    result = {"config": name, "experiment_groups": config["experiment_groups"],
+              "parameters": {key: config[key] for key in ("n", "k", "data_w", "acc_w")},
+              "expected_product_width": product_w, "pe_result_markers": len(marker_vectors),
+              "cycle_counter_bits": cycle_bits, "multipliers": len(multipliers),
+              "accumulator_adders": len(accumulators), "controller_index_adders": len(others),
+              "total_adders": len(adders),
+              "fixed_tool_total_adder_baseline": expected + 1 if name in BASELINE_ADDERS else None,
+              "register_cells": len(registers), "register_bits": reg_bits,
+              "pretech_cells": len(cells), "generic_cells": len(final["cells"]),
+              "generic_cells_per_n_squared": len(final["cells"]) / expected,
+              "register_bits_per_n_squared": reg_bits / expected,
+              "techmap_primitives": primitives, "sweep_comparisons": {}, "failures": failures}
     return result
 
 
-def main() -> int:
-    if len(sys.argv) != 2:
-        print(f"usage: {sys.argv[0]} BUILD_ROOT", file=sys.stderr)
-        return 2
-
-    build_root = Path(sys.argv[1]).resolve()
-    failed = False
-    results = []
-    print(
-        "config\tPE_markers\tcycle_bits\tmul\tacc_add\tother_add\t"
-        "reg_cells\treg_bits\tpretech\tgeneric"
-    )
-    for name, config in CONFIGS.items():
-        result = analyze(build_root, name, config)
-        results.append(result)
-        print(
-            f"{name}\t{result['pe_result_markers']}\t"
-            f"{result['cycle_counter_bits']}\t{result['multipliers']}\t"
-            f"{result['accumulator_adders']}\t"
-            f"{result['controller_index_adders']}\t"
-            f"{result['register_cells']}\t{result['register_bits']}\t"
-            f"{result['pretech_cells']}\t{result['generic_cells']}"
-        )
-        for failure in result["failures"]:
-            failed = True
-            print(f"ERROR: {name}: {failure}", file=sys.stderr)
-
-    aggregate = {"schema_version": 1, "results": results}
-    (build_root / "structure_summary.json").write_text(
-        json.dumps(aggregate, indent=2) + "\n", encoding="utf-8"
-    )
-    return 1 if failed else 0
+def add_comparisons(results):
+    by_name = {item["config"]: item for item in results}
+    for group, base_name in SWEEP_BASES.items():
+        base = by_name[base_name]
+        for item in results:
+            if group not in item["experiment_groups"]: continue
+            values = {field: {"absolute_change": item[field] - base[field],
+                              "ratio": item[field] / base[field] if base[field] else None}
+                      for field in METRICS}
+            item["sweep_comparisons"][group] = {
+                "baseline_config": base_name,
+                "n_ratio": item["parameters"]["n"] / base["parameters"]["n"],
+                "n_squared_ratio": item["parameters"]["n"] ** 2 / base["parameters"]["n"] ** 2,
+                "k_ratio": item["parameters"]["k"] / base["parameters"]["k"], "metrics": values}
 
 
-if __name__ == "__main__":
-    raise SystemExit(main())
+def emit_tsv(results):
+    types = sorted({kind for item in results for kind in item["techmap_primitives"]})
+    columns = ["config", "experiment_groups", "N", "K", "DATA_W", "ACC_W", "PE_markers",
+               "cycle_bits", "mul", "acc_add", "other_add", "reg_cells", "reg_bits",
+               "pretech", "generic", "generic_per_N2", "reg_bits_per_N2"]
+    comparisons = [f"{group}_{metric}_{suffix}" for group in SWEEP_BASES
+                   for metric in ("generic", "reg_bits") for suffix in ("delta", "ratio")]
+    print("\t".join(columns + [f"primitive:{kind}" for kind in types] + comparisons))
+    for item in results:
+        p = item["parameters"]
+        row = [item["config"], ",".join(item["experiment_groups"]), str(p["n"]), str(p["k"]),
+               str(p["data_w"]), str(p["acc_w"]), str(item["pe_result_markers"]),
+               str(item["cycle_counter_bits"]), str(item["multipliers"]),
+               str(item["accumulator_adders"]), str(item["controller_index_adders"]),
+               str(item["register_cells"]), str(item["register_bits"]), str(item["pretech_cells"]),
+               str(item["generic_cells"]), f"{item['generic_cells_per_n_squared']:.6f}",
+               f"{item['register_bits_per_n_squared']:.6f}"]
+        row += [str(item["techmap_primitives"].get(kind, 0)) for kind in types]
+        for group in SWEEP_BASES:
+            comp = item["sweep_comparisons"].get(group)
+            if comp:
+                m = comp["metrics"]
+                row += [str(m["generic_cells"]["absolute_change"]), f"{m['generic_cells']['ratio']:.6f}",
+                        str(m["register_bits"]["absolute_change"]), f"{m['register_bits']['ratio']:.6f}"]
+            else: row += ["", "", "", ""]
+        print("\t".join(row))
 
+
+def main():
+    if len(sys.argv) != 3:
+        print(f"usage: {sys.argv[0]} BUILD_ROOT CONFIG_TSV", file=sys.stderr); return 2
+    root, source = Path(sys.argv[1]).resolve(), Path(sys.argv[2]).resolve()
+    results = [analyze(root, config) for config in load_configs(source)]
+    add_comparisons(results)
+    for item in results:
+        (root / item["config"] / "structure_summary.json").write_text(
+            json.dumps(item, indent=2) + "\n", encoding="utf-8")
+    aggregate = {"schema_version": 2, "configuration_source": str(source),
+                 "sweep_baselines": SWEEP_BASES, "results": results}
+    (root / "structure_summary.json").write_text(json.dumps(aggregate, indent=2) + "\n", encoding="utf-8")
+    emit_tsv(results)
+    for item in results:
+        for failure in item["failures"]: print(f"ERROR: {item['config']}: {failure}", file=sys.stderr)
+    return 1 if any(item["failures"] for item in results) else 0
+
+
+if __name__ == "__main__": raise SystemExit(main())

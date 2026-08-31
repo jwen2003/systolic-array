@@ -1,0 +1,9 @@
+name	N	K	DATA_W	ACC_W	experiment_group
+n1_k1	1	1	8	18	baseline
+n2_k1	2	1	8	18	k_sweep
+n1_k2	1	2	8	18	n_sweep
+n2_k2	2	2	8	18	baseline,n_sweep,k_sweep
+n4_k2	4	2	8	18	n_sweep
+n2_k3	2	3	8	18	k_sweep
+n2_k4	2	4	8	18	k_sweep
+n4_k4	4	4	8	18	baseline

@@ -7,7 +7,9 @@ source "$repo_root/scripts/oss_cad_suite_env.sh"
 yosys_bin="${YOSYS:-$OSS_CAD_SUITE_ROOT/bin/yosys}"
 build_root="$repo_root/build/synth"
 flow_script="$repo_root/synth/yosys_generic.tcl"
-configs=(n1_k1 n2_k2 n4_k4)
+config_file="$repo_root/synth/synth_configs.tsv"
+configs=()
+config_rows=()
 
 if [[ ! -x "$yosys_bin" ]]; then
     echo "Yosys executable not found: $yosys_bin" >&2
@@ -16,6 +18,26 @@ fi
 
 yosys_bin="$(readlink -f "$yosys_bin")"
 flow_script="$(readlink -f "$flow_script")"
+config_file="$(readlink -f "$config_file")"
+while IFS=$'\t' read -r name n k data_w acc_w experiment_group; do
+    [[ "$name" == "name" ]] && continue
+    [[ -z "$name" ]] && continue
+    if [[ ! "$name" =~ ^n[0-9]+_k[0-9]+$ ]] \
+        || [[ ! "$n" =~ ^[1-9][0-9]*$ ]] \
+        || [[ ! "$k" =~ ^[1-9][0-9]*$ ]] \
+        || [[ ! "$data_w" =~ ^[1-9][0-9]*$ ]] \
+        || [[ ! "$acc_w" =~ ^[1-9][0-9]*$ ]] \
+        || [[ "$name" != "n${n}_k${k}" ]]; then
+        echo "Invalid synthesis configuration row: $name $n $k $data_w $acc_w" >&2
+        exit 1
+    fi
+    configs+=("$name")
+    config_rows+=("$name"$'\t'"$n"$'\t'"$k"$'\t'"$data_w"$'\t'"$acc_w"$'\t'"$experiment_group")
+done < "$config_file"
+if [[ "${#configs[@]}" -ne 8 ]]; then
+    echo "Expected exactly 8 trusted synthesis configurations" >&2
+    exit 1
+fi
 mkdir -p "$build_root"
 build_root="$(readlink -f "$build_root")"
 expected_build_root="$(readlink -f "$repo_root/build/synth")"
@@ -71,14 +93,20 @@ run_config() {
     local formal_dir="$build_root/$name"
     export SYNTH_N="$2"
     export SYNTH_K="$3"
-    export SYNTH_DATA_W=8
-    export SYNTH_ACC_W=18
+    export SYNTH_DATA_W="$4"
+    export SYNTH_ACC_W="$5"
+    local experiment_group="$6"
     export SYNTH_OUT_DIR="$staging_root/$name"
 
-    case "$name" in
-        n1_k1|n2_k2|n4_k4) ;;
-        *) echo "Refusing unknown configuration: $name" >&2; return 1 ;;
-    esac
+    local trusted=false
+    local allowed_name
+    for allowed_name in "${configs[@]}"; do
+        [[ "$name" == "$allowed_name" ]] && trusted=true
+    done
+    if [[ "$trusted" != true ]]; then
+        echo "Refusing unknown configuration: $name" >&2
+        return 1
+    fi
     mkdir "$SYNTH_OUT_DIR"
 
     {
@@ -94,6 +122,8 @@ run_config() {
         echo "K=$SYNTH_K"
         echo "DATA_W=$SYNTH_DATA_W"
         echo "ACC_W=$SYNTH_ACC_W"
+        echo "experiment_group=$experiment_group"
+        echo "configuration_source=$config_file"
         echo "synthesis_tcl=$flow_script"
         echo "output_directory=$formal_dir"
     } > "$SYNTH_OUT_DIR/config.txt"
@@ -105,14 +135,15 @@ run_config() {
     )
 }
 
-run_config n1_k1 1 1
-run_config n2_k2 2 2
-run_config n4_k4 4 4
+for row in "${config_rows[@]}"; do
+    IFS=$'\t' read -r name n k data_w acc_w experiment_group <<< "$row"
+    run_config "$name" "$n" "$k" "$data_w" "$acc_w" "$experiment_group"
+done
 
-python3 "$repo_root/scripts/check_synth_structure.py" "$staging_root" \
+python3 "$repo_root/scripts/check_synth_structure.py" "$staging_root" "$config_file" \
     | tee "$staging_root/structure_summary.tsv"
 
-# Back up only the three validated configuration directories.
+# Back up only the validated allowlisted configuration directories.
 for name in "${configs[@]}"; do
     formal_dir="$build_root/$name"
     if [[ -e "$formal_dir" && ! -d "$formal_dir" ]]; then
@@ -153,4 +184,4 @@ if [[ "$staging_root" != "$build_root"/.run.* ]]; then
 fi
 rm -rf -- "$staging_root"
 
-echo "Generic synthesis completed for N/K=1/1, 2/2, and 4/4."
+echo "Generic synthesis completed for all ${#configs[@]} controlled configurations."
