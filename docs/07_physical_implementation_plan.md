@@ -14,6 +14,8 @@
 
 [已建立事实] 所有正式PPA数字来自上述固定镜像的一次完整fresh flow，没有复用或拼接旧镜像的netlist、ODB、placement、CTS、route或timing结果。
 
+[已建立事实] $N=2$、$K=2$设计已经完成从baseline RTL、read_slang frontend、Nangate45映射、floorplan、placement、CTS、global/detailed routing、RC extraction、final STA到GDS和KLayout DRC的完整流程。
+
 ## 2. Kepler Formal兼容性与`LEC_CHECK`
 
 [工具兼容性限制] 原问题不是OpenROAD CTS算法失败。Clock-tree construction、CTS后detailed placement和`repair_timing`均完成，随后ORFS执行`kepler-formal --config 4_rsz_lec_test.yml`时收到`SIGILL`。`kepler-formal --help`也以132退出。
@@ -51,7 +53,9 @@
 - core aspect ratio：1；
 - placement density lower-bound addon：0.10。
 
-[已建立事实] Matrix输入、`cycle_idx → feeder → boundary PE`及psum读取路径没有false path或multicycle path。唯一false path仍是同步低有效复位`rst_n`。最终`check_setup`报告0个unconstrained endpoints；唯一缺input delay的端口是被明确false-path处理的`rst_n`。
+[已建立事实] `rst_n`是同步低有效复位，只在时钟上升沿被RTL采样。本次active-operation评测将`rst_n`设为false path；假设正常计算期间`rst_n`保持稳定，并在operation开始前完成释放。当前STA不验证外部reset assertion/deassertion接口时序，因此400 MHz结论仅适用于active-operation模式。
+
+[已建立事实] Matrix输入、`cycle_idx → feeder → boundary PE`及psum读取路径没有false path或multicycle path。唯一false path仍是上述同步低有效复位`rst_n`。最终`check_setup`报告0个unconstrained endpoints；唯一缺input delay的端口是被明确false-path处理的`rst_n`。
 
 ## 5. Mapping与面积
 
@@ -68,6 +72,8 @@
 | Final functional/physical standard cells | 2068 |
 | Final standard-cell area | 3522.64 µm² |
 | All final instances including fill/tap | 4406 |
+
+[已建立事实] `3442.572 µm²`是Yosys映射后的library cell area；`3502.95 µm²`是detailed-placement阶段design area；`3522.64 µm²`是CTS/post-route最终功能标准单元面积。`6711.18 µm²` core area和`7220.75 µm²` die area是floorplan几何面积，均不得与上述cell/design area互称。最终2068个功能标准单元不包含tap/fill；包含116个tap和2338个fill在内的全部实例数为4406。
 
 [基于结果的解释] 四个PE的乘法和累加器被映射为FA、HA及布尔单元，没有专用multiplier macro。最终分类包括152个timing-repair buffer、9个clock buffer、7个clock inverter、102个普通inverter、116个tap cell和2338个fill cell。
 
@@ -152,14 +158,20 @@ u_controller.cycle_idx[0]/Q
 
 [已建立事实] Global routing、detailed routing、fill、RC extraction、final STA、GDS merge和KLayout DRC均实际运行。最终SPEF非空，未复用旧run。
 
+[已建立事实] `31367 µm`来自FastRoute/GRT的`global_route__wirelength`：对global-routing tree的非零平面segment累计Manhattan长度，并按该工具实现为每段加入一个routing-grid tile；跨层via不计等效长度。`18551 µm`来自TritonRoute/DRT的`route__wirelength`：累计所有routing layer上最终`frPathSeg`实际shape的平面Manhattan长度；via另以13035个单独统计，不折算为长度。两者单位均为µm，但阶段、几何对象和计算定义不同，且不能仅由这两个总数证明其net集合完全一致。
+
+[基于结果的解释] Global-route与detailed-route wirelength来自不同阶段/统计定义，分别记录，不直接计算改善比例。
+
 ## 11. Warning审查
 
 - Floorplan：`IFP-0028`为core坐标snap；`EST-0027`为floorplan阶段尚无寄生参数而使用wire-load model。
-- Global route：92个`RSZ-0104`为单pin dangling net提示，主要对应映射cell未使用输出；最终设计非空、STA/DRV/route/DRC均通过。另有`GRT-0246`提示库中没有antenna diode。
+- Global route：92个`RSZ-0104`为单pin net提示。机器审计把warning逐项关联到最终`6_final.v`中的唯一cell pin：72个是四个18-bit `psum_out`寄存器未使用的`QN`互补输出，16个是A/B forwarding寄存器未使用的`QN`（本配置中均为B forwarding），2个是valid forwarding寄存器未使用的`QN`，1个是controller `done`寄存器未使用的`QN`，1个是用于形成`cycle_idx`进位的half-adder未使用sum输出。没有未分类项。
 - Detailed route：同一`GRT-0246`；最终antenna violating nets/pins均为0。
 - Finish：`RCX-0514`为旧extractor参数弃用提示；`GUI-0076`为无`XDG_RUNTIME_DIR`的headless GUI提示。
 
 [已建立事实] 各阶段error count均为0，最终DRC、setup、hold、slew、capacitance和fanout violation均为0。
+
+[已建立事实] 92项中没有clock或clock sink、reset、top-level functional port、feeder控制有效输出、accumulator `Q`状态或18-bit结果有效输出发生dangling。warning均指向未使用的互补/中间cell输出，不是结果位截断或PE连接缺失。机器可读结果由`scripts/audit_dangling_nets.py`生成到被Git忽略的`build/openroad/lec_disabled/systolic_n2_k2_full/dangling_net_audit.json`。
 
 ## 12. `acc_clear`与协议审查
 
@@ -171,6 +183,6 @@ u_controller.cycle_idx[0]/Q
 
 [已建立事实] 结果属于Nangate45/FreePDK45教育平台和typical library corner的可重复基准，不是商业工艺signoff。
 
-[验证缺口] 没有多corner/multi-mode分析、foundry-qualified extraction、OCV/AOCV/POCV、真实switching activity或silicon correlation。OpenROAD报告的约0.823 mW是该开源流程假设下的估计值，不应作为可信产品功耗。
+[验证缺口] 没有多corner/multi-mode分析、foundry-qualified extraction、OCV/AOCV/POCV、真实switching activity或silicon correlation。Activity-based power分析尚未执行；OpenROAD流程中出现的约0.823 mW仅是默认假设下的工具估计，不是本baseline的可信功耗结论。因此本轮建立了面积、时序和物理可实现性基准，但不得称为商业工艺signoff或完整PPA。
 
 [待验证假设] 后续若扩大$N$或$K$，关键路径、拥塞、`acc_clear`扇出和布线延迟占比可能显著变化；在完成受控scaling sweep前不得外推本次N2/K2结果。
