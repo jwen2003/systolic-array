@@ -10,6 +10,11 @@ obj_dir/
 # Logs
 *.log
 
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
 # Editor and OS metadata
 .vscode/
 .DS_Store
