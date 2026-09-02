@@ -174,3 +174,7 @@ python3 scripts/check_openroad_results.py \
 - 尚未进行N/K physical scaling、clock sweep或activity-based power analysis；不得从单一N2/K2 baseline外推更大阵列的频率、面积、拥塞或功耗。
 
 本仓库的可审计技术细节、工具版本、warning分类及统计定义均保留在 `docs/` 和可重复脚本中；README仅汇总已经建立的结论。
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
