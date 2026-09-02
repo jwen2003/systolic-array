@@ -1,5 +1,7 @@
 # Systolic Array MVP: 综合与PPA计划
 
+[English](05_synthesis_and_ppa_plan-EN.md) | [简体中文](05_synthesis_and_ppa_plan-zh_CN.md)
+
 ## 1. 文档状态
 
 - 状态：第二版，`read_slang` generic synthesis flow 已建立并通过三种配置
@@ -205,7 +207,7 @@ Slang 三种配置均报告 0 error、0 warning。完整日志没有 Yosys warni
 
 - 确认 `git diff -- rtl` 为空；
 - 运行 `git diff --check`；
-- 重新运行现有统一回归入口，确保五组定向 TB 和六种参数配置全部通过；
+- 重新运行现有统一回归入口，确保五组定向 TB 和八种参数配置、共 872 个 corner/random operation 全部通过；
 - 本流程未采用 `sv2v`，`read_slang` 直接读取原始 baseline；现有回归仍是主要动态功能证据，Yosys 成功退出本身不代替验证。
 
 ## 7. 尚未建立的 PPA 事实

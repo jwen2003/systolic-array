@@ -1,11 +1,13 @@
 # Systolic Array MVP: 数据流
 
+[English](02_dataflow-EN.md) | [简体中文](02_dataflow-zh_CN.md)
+
 ## 1. 文档状态
 
 - 状态：第三版，baseline 数据流与边界调度已冻结，并通过定向、随机与 MAC 次数结构回归
 - 已冻结并实现：output-stationary 映射、A/B 传播方向、索引式 skew、PE 相遇时间、fill/drain 和理想利用率
 - 当前输入协议：完整矩阵在 operation 期间保持稳定，feeder 由 `busy` 和 `cycle_idx` 驱动
-- 当前证据边界：六种 $N/K$ 配置、600 轮随机 operation 的结果、完成周期、每 PE MAC 次数及逐拍操作数身份均正确
+- 当前证据边界：八种 $N/K$ 配置各完成 9 类确定性 corner 与 100 轮可复现随机 operation，共 872 个 parameterized operation；结果、完成周期、每 PE MAC 次数及逐拍操作数身份均正确
 
 ## 2. 数学映射
 
@@ -231,7 +233,7 @@ RTL 和验证必须保持：
 当前验证状态：
 
 - 第 1～5 项已由 PE、裸阵列和 feeder 定向测试逐拍覆盖；
-- 第 6 项已由端到端参考模型在六种参数配置、600 轮随机 operation 中覆盖；
+- 第 6 项已由端到端参考模型在八种参数配置、872 个 corner/random operation 中覆盖；
 - 第 7 项已由层次化 MAC count monitor 直接检查；
 - 第 8 项及第 6 项中的“具体 $k$ 身份”已由逐拍 pairing monitor 直接检查；合法 $k$ 窗口内同时检查双 valid 和 A/B 数值，窗口外检查不得出现双 valid。
 

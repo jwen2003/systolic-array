@@ -1,5 +1,7 @@
 # Systolic Array MVP: 最小软件契约
 
+[English](10_minimal_software_contract-EN.md) | [简体中文](10_minimal_software_contract-zh_CN.md)
+
 ## 1. 文档定位与目的
 
 [当前 RTL 已建立的事实] Systolic Array MVP 已定义矩阵乘加的数据流、定点算术、`start`/`busy`/`done` 时序和参数化硬件 shape，但当前 Top 使用并行 unpacked-array 端口，不是 CPU 可直接访问的设备接口。

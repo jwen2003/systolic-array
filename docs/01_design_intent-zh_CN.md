@@ -1,11 +1,13 @@
 # Systolic Array MVP: 设计意图
 
+[English](01_design_intent-EN.md) | [简体中文](01_design_intent-zh_CN.md)
+
 ## 1. 文档状态
 
 - 状态：第四版，baseline RTL、定向/随机回归、结构与协议 monitor 已完成
 - 当前覆盖范围：MVP 目标、系统边界、核心设计原则、外部操作协议与验收标准
-- 当前验证证据：五组定向 testbench 通过；六种参数配置完成 600 轮可复现随机回归；每 PE MAC 次数与逐拍 A/B/$k$ 配对 monitor 均通过
-- 新增验证证据：系统协议 monitor 与九类确定性 corner cases 已在六种配置中通过；统一回归脚本已验证；尚未完成综合与 PPA
+- 当前验证证据：五组 baseline 定向 testbench 通过；八种参数配置各完成 9 类确定性 corner 与 100 轮可复现随机 operation，共 872 个参数化 operation；每 PE MAC 次数、逐拍 A/B/$k$ 配对与系统协议 monitor 均通过
+- 当前实现证据：baseline generic synthesis 与 Nangate45 N2/K2 RTL-to-GDS 已完成；Registered Boundary 作为独立实验变体保留；最小软件契约已经冻结
 
 本文档说明本项目为什么存在、MVP 要证明什么，以及哪些功能被明确排除。它不用于描述逐拍数据位置或具体 RTL 结构；这些内容分别记录在《02 数据流》和《03 微架构》中。
 
@@ -141,9 +143,9 @@ MVP 至少需要满足：
 - 综合报告能够解释乘法器、寄存器、面积与关键路径的来源；
 - 能够解释阵列扩大时 fill/drain 和供数约束为何限制加速。
 
-截至当前 checkpoint，除综合/PPA 相关项目外，上述功能 baseline 的主要验收项已经通过：五组定向 testbench 持续通过；$N=1,K=1$、$N=2,K=1$、$N=2,K=2$、$N=2,K=3$、$N=4,K=1$、$N=4,K=4$ 六种配置各完成 100 轮固定 seed 随机回归；完成周期、全部结果和每 PE MAC 次数均符合模型；Verilator `--Wall` 无未裁决 warning。
+上述功能 baseline 的主要验收项已经通过：五组定向 testbench 持续通过；$N/K=1/1,2/1,1/2,2/2,4/2,2/3,2/4,4/4$ 八种配置各完成 9 类确定性 corner 与 100 轮固定 seed 随机 operation；完成周期、全部结果、每 PE MAC 次数、A/B/$k$ 配对和系统协议均符合模型；Verilator 5.032 `--Wall` 为 0 error、0 warning。
 
-逐拍 pairing monitor 已在上述六种配置、600 轮 operation 中通过，直接证明每次 MAC 在周期 $i+j+k$ 使用 `A[i][k]` 与 `B[k][j]`，并检查合法窗口外不得出现双 valid。
+逐拍 pairing monitor 已在上述八种配置、872 个 parameterized operation 中通过，直接检查每次 MAC 在周期 $i+j+k$ 使用 `A[i][k]` 与 `B[k][j]`，并检查合法窗口外不得出现双 valid。
 
 ## 8. 当前接口与操作约束
 
@@ -165,13 +167,16 @@ baseline 采用完整矩阵并行输入，而不是逐拍流式装载：
 1. 五个可综合 RTL 模块及其顶层集成；
 2. PE、裸阵列、Input Feeder、Controller、系统顶层五组定向验证；
 3. 参数化随机端到端 testbench 与 signed 参考模型；
-4. 六种 $N/K$ 配置、合计 600 轮可复现随机 operation；
+4. 八种 $N/K$ 配置、合计 872 个可复现 corner/random operation；
 5. 每个 PE 每轮恰好执行 $K$ 次 MAC 的层次化 monitor；
 6. 为 $N=1$ 将阵列互连重构为包含输入/输出边界位置的 pipe，并完成裸阵列、$N=2,K=2$、$N=4,K=4$ 回归。
-7. 六种配置、600 轮 operation 的逐拍 A/B/$k$ pairing monitor。
+7. 八种配置、872 个 operation 的逐拍 A/B/$k$ pairing monitor；
+8. baseline generic synthesis、Nangate45 N2/K2 RTL-to-GDS 与 400–667 MHz clock sweep；
+9. 独立 Registered Boundary 实验变体的结构验证和 500/667 MHz 物理对照；
+10. 已冻结的最小软件契约。
 
-功能退出标准已满足，后续工作为：
+功能、generic synthesis 与当前物理实现退出标准已满足。baseline 继续作为默认实现；Registered Boundary 不替换 baseline。后续开放问题为：
 
-1. 首次综合后分析乘法器、寄存器、面积、频率、关键路径与利用率；
+1. 在其他 $N/K$、corner 或工艺下扩展物理证据；
 2. 更大 $K$ 下 `ACC_W` 的推导和溢出策略；
 3. 后续再评估矩阵装载存储、结果读取接口及索引式/延迟链式 feeder 的 PPA 差异。

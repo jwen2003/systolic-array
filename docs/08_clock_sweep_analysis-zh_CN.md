@@ -1,5 +1,7 @@
 # Systolic Array MVP: 时钟频率缩放分析
 
+[English](08_clock_sweep_analysis-EN.md) | [简体中文](08_clock_sweep_analysis-zh_CN.md)
+
 ## 1. 实验范围与可追溯环境
 
 [已建立事实] 本实验只使用 $N=2$、$K=2$、`DATA_W=8`、`ACC_W=18`。五个频点均从read_slang frontend开始独立执行mapping、floorplan、placement、CTS、global/detailed routing、RC extraction、final STA、GDS和KLayout DRC，没有复用其他频点的netlist、ODB、SPEF或placement结果。

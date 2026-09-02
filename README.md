@@ -72,7 +72,18 @@ docs/      Design intent, dataflow, microarchitecture, verification, synthesis s
 build/     Generated artifacts; not committed to Git
 ```
 
-See [Design intent — Chinese](docs/01_design_intent-zh_CN.md) through [Physical implementation and PPA analysis — Chinese](docs/07_physical_implementation_plan-zh_CN.md) for the detailed design and evidence chain. English translations of the detailed design documents are being prepared for v0.1.1.
+Detailed design and evidence documents:
+
+- [01 Design intent](docs/01_design_intent-EN.md)
+- [02 Dataflow](docs/02_dataflow-EN.md)
+- [03 Microarchitecture](docs/03_microarchitecture-EN.md)
+- [04 Verification plan](docs/04_verification_plan-EN.md)
+- [05 Synthesis and PPA plan](docs/05_synthesis_and_ppa_plan-EN.md)
+- [06 Synthesis scaling analysis](docs/06_synthesis_scaling_analysis-EN.md)
+- [07 Physical implementation and PPA analysis](docs/07_physical_implementation_plan-EN.md)
+- [08 Clock-frequency scaling analysis](docs/08_clock_sweep_analysis-EN.md)
+- [09 Registered Boundary PPA analysis](docs/09_registered_boundary_ppa_analysis-EN.md)
+- [10 Minimal software contract](docs/10_minimal_software_contract-EN.md)
 
 ## Verification method and results
 
@@ -98,7 +109,7 @@ The controlled experiments hold `DATA_W=8` and `ACC_W=18` constant:
 - With `N=2` and `K=1,2,3,4`, the four PE datapaths remain unchanged. Changes primarily come from Controller/Feeder selection logic and the cycle counter. `K=3/4` crosses a counter-width boundary, increasing register bits from 110 to 111.
 - Generic cells are tool-version-dependent logic-size proxies, not target-technology standard cells, area, Fmax, or power.
 
-See [Synthesis scaling analysis — Chinese](docs/06_synthesis_scaling_analysis-zh_CN.md) for complete statistics and definitions.
+See [Synthesis scaling analysis](docs/06_synthesis_scaling_analysis-EN.md) for complete statistics and definitions.
 
 ## Nangate45 N2/K2 RTL-to-GDS baseline
 
@@ -129,7 +140,7 @@ Global-route and detailed-route wirelength use different stages and statistical 
 | 571.429 MHz | +0.085547 ns | 2,080 | 3,529.82 µm² |
 | 666.667 MHz | +0.024937 ns | 2,372 | 3,896.63 µm² |
 
-All five targets complete fresh RTL-to-GDS flows with setup and hold met, zero unconstrained endpoints, zero global overflow, zero detailed-route DRC, and zero KLayout DRC. Implementation cost begins to rise at 571.429 MHz; 666.667 MHz shows a clear jump in cell/area and timing-repair cost. Because the highest tested target still passes, the experiment does not identify the first failing point, and 666.667 MHz must not be described as silicon Fmax. See [Clock-frequency scaling analysis — Chinese](docs/08_clock_sweep_analysis-zh_CN.md) for the complete flow and metrics.
+All five targets complete fresh RTL-to-GDS flows with setup and hold met, zero unconstrained endpoints, zero global overflow, zero detailed-route DRC, and zero KLayout DRC. Implementation cost begins to rise at 571.429 MHz; 666.667 MHz shows a clear jump in cell/area and timing-repair cost. Because the highest tested target still passes, the experiment does not identify the first failing point, and 666.667 MHz must not be described as silicon Fmax. See [Clock-frequency scaling analysis](docs/08_clock_sweep_analysis-EN.md) for the complete flow and metrics.
 
 ## Critical-path analysis
 
@@ -149,11 +160,11 @@ The path begins at the Controller counter, passes through Feeder/control selecti
 
 The independent Registered Boundary variant adds one stage of A/B data/valid registers between the Feeder and Array while retaining 4 signed multipliers and 4 accumulator datapaths. At 500 MHz, post-route setup WNS improves from the baseline `+0.219901 ns` to `+0.475003 ns`. At the same 667 MHz target, final cells decrease by 11.38%, final area decreases by 3.97%, and timing-repair buffers decrease by 62.5%. The cost is an increase in the RUN window from 4 cycles to 5 cycles, reducing same-frequency operation throughput by 20% under the non-overlap protocol.
 
-The baseline therefore remains the default implementation. Registered Boundary is retained as an experimental timing-closure and implementation-cost tradeoff. See [Registered Boundary PPA analysis — Chinese](docs/09_registered_boundary_ppa_analysis-zh_CN.md) for complete structural, post-route, and throughput analysis.
+The baseline therefore remains the default implementation. Registered Boundary is retained as an experimental timing-closure and implementation-cost tradeoff. See [Registered Boundary PPA analysis](docs/09_registered_boundary_ppa_analysis-EN.md) for complete structural, post-route, and throughput analysis.
 
 ## Minimal software contract
 
-The project freezes a logical software contract: workloads map onto a fixed hardware shape; A/B use signed `int8`; the accumulator/result uses signed `int18`; and host buffers are row-major. Smaller shapes execute through zero padding. Commands follow `busy`, a one-cycle `start`, and a one-cycle `done`; overflow policy may expose hardware wrap or allow a future wrapper to reject risk conservatively. This contract does not mean that a runtime, AXI, or DMA interface has been implemented. See [Minimal software contract — Chinese](docs/10_minimal_software_contract-zh_CN.md).
+The project freezes a logical software contract: workloads map onto a fixed hardware shape; A/B use signed `int8`; the accumulator/result uses signed `int18`; and host buffers are row-major. Smaller shapes execute through zero padding. Commands follow `busy`, a one-cycle `start`, and a one-cycle `done`; overflow policy may expose hardware wrap or allow a future wrapper to reject risk conservatively. This contract does not mean that a runtime, AXI, or DMA interface has been implemented. See [Minimal software contract](docs/10_minimal_software_contract-EN.md).
 
 ## Reproduction
 

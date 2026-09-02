@@ -72,7 +72,18 @@ docs/      设计意图、dataflow、微架构、验证、综合缩放与物理�
 build/     自动生成产物，不提交Git
 ```
 
-详细设计与证据链见 [docs/01_design_intent-zh_CN.md](docs/01_design_intent-zh_CN.md) 至 [docs/07_physical_implementation_plan-zh_CN.md](docs/07_physical_implementation_plan-zh_CN.md)。
+详细设计与证据文档：
+
+- [01 设计意图](docs/01_design_intent-zh_CN.md)
+- [02 数据流](docs/02_dataflow-zh_CN.md)
+- [03 微架构](docs/03_microarchitecture-zh_CN.md)
+- [04 验证计划](docs/04_verification_plan-zh_CN.md)
+- [05 综合与 PPA 计划](docs/05_synthesis_and_ppa_plan-zh_CN.md)
+- [06 综合缩放分析](docs/06_synthesis_scaling_analysis-zh_CN.md)
+- [07 物理实现与 PPA 分析](docs/07_physical_implementation_plan-zh_CN.md)
+- [08 时钟频率缩放分析](docs/08_clock_sweep_analysis-zh_CN.md)
+- [09 Registered Boundary PPA 分析](docs/09_registered_boundary_ppa_analysis-zh_CN.md)
+- [10 最小软件契约](docs/10_minimal_software_contract-zh_CN.md)
 
 ## 验证方法与结果
 
