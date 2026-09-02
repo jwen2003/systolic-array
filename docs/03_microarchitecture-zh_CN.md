@@ -1,5 +1,7 @@
 # Systolic Array MVP: 微架构
 
+[English](03_microarchitecture-EN.md) | [简体中文](03_microarchitecture-zh_CN.md)
+
 ## 1. 文档状态
 
 - 状态：第三版，baseline 微架构已冻结、实现并通过完整参数回归矩阵
@@ -323,10 +325,12 @@ $$
 
 ## 15. 当前实现与验证 checkpoint
 
-当前五个 RTL 模块均已在 Verilator `--Wall` 下完成编译和定向回归。参数化随机顶层回归覆盖六种配置：$N=1,K=1$、$N=2,K=1$、$N=2,K=2$、$N=2,K=3$、$N=4,K=1$、$N=4,K=4$，每种 100 轮。
+当前五个 baseline RTL 模块均已在 Verilator 5.032 `--Wall` 下完成编译和定向回归。参数化随机顶层回归覆盖 $N/K=1/1,2/1,1/2,2/2,4/2,2/3,2/4,4/4$ 八种配置；每种执行 9 类确定性 corner 与 100 轮固定 seed 随机 operation，共 872 个 parameterized operation。
 
 层次化 monitor 直接观察每个 PE 的 `a_valid_pe_in && b_valid_pe_in`，并在 operation 完成后检查每个 PE 的 MAC 次数等于 $K$。该 monitor 不修改可综合数据通路。
 
-逐拍 pairing monitor 已对全局 Cycle $t$ 计算 $k=t-i-j$，并在 $0\le k<K$ 时检查 PE$(i,j)$ 的输入为 `A[i][k]` 与 `B[k][j]`；无合法 $k$ 时检查不得出现双 valid。该 monitor 已在六种配置、600 轮 operation 中通过，且未修改可综合数据通路。
+逐拍 pairing monitor 已对全局 Cycle $t$ 计算 $k=t-i-j$，并在 $0\le k<K$ 时检查 PE$(i,j)$ 的输入为 `A[i][k]` 与 `B[k][j]`；无合法 $k$ 时检查不得出现双 valid。该 monitor 已在八种配置、872 个 operation 中通过，且未修改可综合数据通路。
 
-参数化端到端 TB 现已加入系统协议 monitor，覆盖 controller 计数与完成转换、`done` 单拍、`done`/`busy` 互斥、`acc_clear` 定义、idle feeder valid、同步 reset 后全部 PE 状态，以及 RUN 期间输入矩阵稳定性。上述检查与九类确定性 corner cases 已由统一回归脚本在六种配置中通过。
+参数化端到端 TB 已加入系统协议 monitor，覆盖 controller 计数与完成转换、`done` 单拍、`done`/`busy` 互斥、`acc_clear` 定义、idle feeder valid、同步 reset 后全部 PE 状态，以及 RUN 期间输入矩阵稳定性。上述检查与九类确定性 corner cases 已由统一回归脚本在八种配置中通过。
+
+baseline 已完成 generic synthesis 与 Nangate45 N2/K2 RTL-to-GDS，并继续作为默认实现。独立 Registered Boundary 变体在 Feeder 与 Array 之间增加一级 A/B data/valid 寄存器，使用独立 Controller 与 Top；它不改变 baseline RTL，且作为 timing-closure 与实现成本权衡实验保留。AXI、DMA、runtime、streaming 与 backpressure 仍不属于当前 MVP；逻辑最小软件契约已经冻结，但 CPU 可访问接口尚未实现。

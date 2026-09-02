@@ -1,5 +1,7 @@
 # Systolic Array MVP: 综合缩放分析
 
+[English](06_synthesis_scaling_analysis-EN.md) | [简体中文](06_synthesis_scaling_analysis-zh_CN.md)
+
 ## 1. 分析目标
 
 本轮在冻结 RTL 和验证语义不变的前提下，用 Yosys generic synthesis 分别观察阵列维度 $N$ 与内积长度 $K$ 对逻辑结构规模的影响。实验不包含 Liberty 映射、STA 或物理实现。

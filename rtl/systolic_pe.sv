@@ -1,5 +1,10 @@
 `timescale 1ns/1ps
 
+// Output-stationary processing element with independent rightward A and
+// downward B forwarding. A MAC occurs only when both input valid signals are
+// asserted; the local accumulator never propagates between PEs.
+// Reset is synchronous active-low. Accumulator priority is reset, clear, MAC,
+// then hold, while A/B forwarding remains independent of accumulator clear.
 module systolic_pe #(
     parameter int DATA_W = 8,
     parameter int ACC_W  = 18
@@ -50,6 +55,8 @@ module systolic_pe #(
 
     assign mac_valid = a_valid_in && b_valid_in;
 
+    // Fixed-width addition follows two's-complement wraparound. This PE has no
+    // saturation, rounding, quantization, or overflow-reporting mechanism.
     always_ff @(posedge clk) begin
         if (!rst_n) begin
             a_out       <= '0;
@@ -65,6 +72,8 @@ module systolic_pe #(
             b_valid_out <= b_valid_in;
 
             // Clearing starts a new accumulation and may accept its first MAC.
+            // With dual valid on a clear edge, the current signed product is
+            // the first partial sum rather than being added to stale state.
             if (acc_clear) begin
                 if (mac_valid) begin
                     psum_out <= product_ext;

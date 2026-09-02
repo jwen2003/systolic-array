@@ -1,5 +1,7 @@
 # Systolic Array MVP: 物理实现与PPA分析
 
+[English](07_physical_implementation_plan-EN.md) | [简体中文](07_physical_implementation_plan-zh_CN.md)
+
 ## 1. 范围与正式基线
 
 [已建立事实] 本轮仅实现 $N=2$、$K=2$、`DATA_W=8`、`ACC_W=18`。正式物理基线固定为：

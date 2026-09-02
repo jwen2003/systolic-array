@@ -1,5 +1,7 @@
 # Systolic Array MVP: 时钟频率缩放分析
 
+[English](08_clock_sweep_analysis-EN.md) | [简体中文](08_clock_sweep_analysis-zh_CN.md)
+
 ## 1. 实验范围与可追溯环境
 
 [已建立事实] 本实验只使用 $N=2$、$K=2$、`DATA_W=8`、`ACC_W=18`。五个频点均从read_slang frontend开始独立执行mapping、floorplan、placement、CTS、global/detailed routing、RC extraction、final STA、GDS和KLayout DRC，没有复用其他频点的netlist、ODB、SPEF或placement结果。
@@ -90,4 +92,4 @@
 
 机器可读结果位于被Git忽略的`build/openroad/clock_sweep/clock_sweep_summary.json`与`clock_sweep_summary.tsv`；每个配置目录还保存独立manifest、constraint hash、完整日志、stage JSON、final audit和单配置`clock_sweep_result.json`。
 
-Registered Boundary 变体的独立结构、500/667 MHz物理结果与架构裁决见 [09_registered_boundary_ppa_analysis.md](09_registered_boundary_ppa_analysis.md)。
+Registered Boundary 变体的独立结构、500/667 MHz物理结果与架构裁决见 [09_registered_boundary_ppa_analysis-zh_CN.md](09_registered_boundary_ppa_analysis-zh_CN.md)。

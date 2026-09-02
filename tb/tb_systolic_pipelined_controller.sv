@@ -1,5 +1,9 @@
 `timescale 1ns/1ps
 
+// Self-checking Registered Boundary Controller test. It verifies the extra RUN
+// cycle, RUN-zero clear, one-cycle done, retained final count, ignored RUN start,
+// and minimum counter width on a second configuration. Any $fatal is a protocol
+// failure; the final message means both parameter instances passed.
 module tb_systolic_pipelined_controller;
 
     localparam int N_BASE       = 2;

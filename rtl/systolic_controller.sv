@@ -1,5 +1,10 @@
 `timescale 1ns/1ps
 
+// Baseline fixed-latency operation controller. start is accepted only while
+// idle and ignored throughout RUN. cycle_idx names the feeder cycle currently
+// being generated; TOTAL_CYCLES=K+2*N-2 and LAST_CYCLE=K+2*N-3.
+// The completion edge commits the last MAC, exposes final psums, deasserts
+// busy, and raises the one-cycle done event while retaining the final count.
 module systolic_controller #(
     parameter int N       = 2,
     parameter int K       = 2,
@@ -37,6 +42,7 @@ module systolic_controller #(
     end
 
     // The first active cycle clears every accumulator and may accept a MAC.
+    // This definition makes acc_clear true only for visible RUN cycle zero.
     assign acc_clear = busy && (cycle_idx == '0);
 
     always_ff @(posedge clk) begin

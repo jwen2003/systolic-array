@@ -1,5 +1,10 @@
 `timescale 1ns/1ps
 
+// Self-checking baseline Controller test for start acceptance, busy/done,
+// cycle_idx, acc_clear, ignored RUN requests, and minimum N1/K1 timing.
+// Inputs are established before sampling edges and registered outputs are
+// checked afterward. Any $fatal is a protocol failure; the final message means
+// every base and boundary-parameter check passed.
 module tb_systolic_controller;
 
     localparam int N_BASE       = 2;

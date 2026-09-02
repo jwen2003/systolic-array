@@ -1,5 +1,10 @@
 `timescale 1ns/1ps
 
+// Parameterized self-checking random testbench for the experimental Registered
+// Boundary Top. The reference model checks results, while independent monitors
+// prove MAC count, delayed A/B/k identity, protocol timing, and matrix stability.
+// The deterministic seed reproduces failures; any $fatal is a verification
+// failure, and the final message means all corners and random operations passed.
 module tb_systolic_array_pipelined_random #(
     parameter int          N                = 2,
     parameter int          K                = 2,
@@ -56,6 +61,9 @@ module tb_systolic_array_pipelined_random #(
         forever #5 clk = ~clk;
     end
 
+    // The Boundary adds one cycle, so consumed operands map through
+    // k = cycle_idx - 1 - i - j rather than the baseline cycle equation.
+    // Final sums alone cannot prove these exact operand identities.
     // Check the exact A/B/k identity consumed by every PE each RUN cycle.
     task automatic check_cycle_pairing(
         input int cycle_value
@@ -110,6 +118,8 @@ module tb_systolic_array_pipelined_random #(
         end
     end
 
+    // This monitor snapshots matrices at RUN entry and checks their extended
+    // busy-window stability as well as raw-Feeder and Boundary idle validity.
     // Check the frozen system protocol without adding logic to the DUT.
     always @(posedge clk) begin
         #1;
@@ -198,6 +208,8 @@ module tb_systolic_array_pipelined_random #(
         end
     end
 
+    // RUN zero only loads Boundary state, so any dual-valid PE input is a timing
+    // failure. Later counts prove every PE still commits exactly K MACs.
     // Count committed MAC operations at every PE without modifying the RTL.
     always_ff @(posedge clk) begin
         if (!rst_n) begin
@@ -259,6 +271,8 @@ module tb_systolic_array_pipelined_random #(
         end
     endtask
 
+    // Nine deterministic patterns cover zeros, identity/sparse structure,
+    // uniform values, alternating signs, signed extremes, and zero rows/columns.
     task automatic generate_corner_matrices(input int unsigned corner_idx);
         begin
             for (int i = 0; i < N; i++) begin
@@ -379,6 +393,8 @@ module tb_systolic_array_pipelined_random #(
         end
     endtask
 
+    // The loop must observe the LAST_CYCLE edge before done terminates it; that
+    // edge commits the final MAC and makes the final psum visible with done.
     task automatic run_loaded_operation(
         input int unsigned operation_idx
     );

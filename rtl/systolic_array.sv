@@ -1,5 +1,8 @@
 `timescale 1ns/1ps
 
+// Bare systolic fabric that implements only spatial topology. A advances one
+// registered PE per column, B advances one registered PE per row, and valid
+// follows the same links. Partial sums remain local to their owning PEs.
 module systolic_array #(
     parameter int N      = 2,
     parameter int DATA_W = 8,
@@ -36,6 +39,8 @@ module systolic_array #(
 
     generate
         // Connect the external inputs to the first position of each pipe.
+        // Column zero takes A from the row boundary, and row zero takes B from
+        // the column boundary; all other inputs come from the adjacent PE.
         for (genvar i = 0; i < N; i++) begin : gen_a_input
             assign a_pipe[i][0]       = a_left[i];
             assign a_valid_pipe[i][0] = a_valid_left[i];
@@ -73,6 +78,9 @@ module systolic_array #(
                 );
             end
         end
+        // The terminal pipe positions may have no top-level consumer. Keeping
+        // them in the uniform link arrays simplifies generate rules, including
+        // the N=1 topology, while synthesis may remove unobservable endpoints.
     endgenerate
 
 endmodule

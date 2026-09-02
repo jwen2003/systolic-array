@@ -1,5 +1,9 @@
 `timescale 1ns/1ps
 
+// Self-checking directed test for combinational skew generation and invalid
+// lane behavior across square and rectangular inner dimensions. Each cycle is
+// driven explicitly before outputs are sampled. A $fatal identifies a schedule
+// mismatch; the final pass message means every expected boundary value matched.
 module tb_input_feeder;
 
     localparam int DATA_W = 8;

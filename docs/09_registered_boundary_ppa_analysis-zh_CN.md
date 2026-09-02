@@ -1,5 +1,7 @@
 # Systolic Array MVP: Registered Boundary PPA 分析
 
+[English](09_registered_boundary_ppa_analysis-EN.md) | [简体中文](09_registered_boundary_ppa_analysis-zh_CN.md)
+
 ## 1. 实验目的
 
 [已建立事实] 本实验评估在 `input_feeder` 与 `systolic_array` 之间加入一级 Registered Boundary，能否切断 baseline 的 Feeder/control 到边界 PE accumulator 的长组合路径，并量化其周期、面积与物理收敛代价。实验保持 $N=2$、$K=2$、`DATA_W=8`、`ACC_W=18`、Nangate45 平台、active-operation 约束以及固定 ORFS 环境不变。
