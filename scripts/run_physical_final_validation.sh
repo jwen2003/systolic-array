@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-yosys_bin="/home/yttlj2003/.local/opt/oss-cad-suite-20260830/bin/yosys"
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+repo_root="$(cd -- "$script_dir/.." && pwd)"
+source "$repo_root/scripts/oss_cad_suite_env.sh"
+yosys_bin="${YOSYS:-$OSS_CAD_SUITE_ROOT/bin/yosys}"
+[[ -x "$yosys_bin" ]] || { echo "Yosys not executable: $yosys_bin" >&2; exit 2; }
 formal_dir="$repo_root/build/openroad/compatibility/final_formal"
 mkdir -p "$formal_dir"
 

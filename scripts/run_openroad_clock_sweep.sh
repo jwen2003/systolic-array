@@ -1,10 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+repo_root="$(cd -- "$script_dir/.." && pwd)"
 [[ -d "$repo_root/.git" && -f "$repo_root/physical/nangate45/clock_sweep.tsv" ]] || exit 2
-orfs_root="${ORFS_ROOT:-/mnt/c/Projects/OpenROAD-flow-scripts}"
-orfs_root="$(readlink -f "$orfs_root")"
+if [[ -z "${ORFS_ROOT:-}" ]]; then
+  echo "ORFS_ROOT is required. Example: export ORFS_ROOT=/path/to/OpenROAD-flow-scripts" >&2
+  exit 2
+fi
+orfs_root="$(readlink -f -- "$ORFS_ROOT")"
+[[ -d "$orfs_root" && -d "$orfs_root/.git" ]] || { echo "ORFS_ROOT must name an existing Git checkout" >&2; exit 2; }
 image="openroad/orfs@sha256:73bd87efa06758865277f347fbc6b932642d8ab21a5430c5ce5480aaa60c27d0"
 expected_orfs="6101364b2d7909dd797e1e3e7f80695401cfa4e4"
 source "$repo_root/scripts/oss_cad_suite_env.sh"

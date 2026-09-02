@@ -7,13 +7,19 @@ output_dir="${3:?output directory required}"
 threads="${4:-16}"
 lec_check="${5-}"
 target="${6:-cts}"
-repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-orfs_root="${ORFS_ROOT:-/mnt/c/Projects/OpenROAD-flow-scripts}"
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+repo_root="$(cd -- "$script_dir/.." && pwd)"
+if [[ -z "${ORFS_ROOT:-}" ]]; then
+  echo "ORFS_ROOT is required. Example: export ORFS_ROOT=/path/to/OpenROAD-flow-scripts" >&2
+  exit 2
+fi
+orfs_root="$ORFS_ROOT"
 
-orfs_root="$(readlink -f "$orfs_root")"
+orfs_root="$(readlink -f -- "$orfs_root")"
+[[ -d "$orfs_root" && -d "$orfs_root/.git" ]] || { echo "ORFS_ROOT must name an existing Git checkout" >&2; exit 2; }
+[[ "$(git -C "$orfs_root" -c safe.directory="$orfs_root" rev-parse HEAD)" == "6101364b2d7909dd797e1e3e7f80695401cfa4e4" ]] || { echo "ORFS commit mismatch" >&2; exit 2; }
 output_dir="$(readlink -m "$output_dir")"
 build_root="$(readlink -f "$repo_root/build/openroad")"
-[[ "$orfs_root" == "/mnt/c/Projects/OpenROAD-flow-scripts" ]] || exit 2
 case "$output_dir" in
   "$build_root"/compatibility/*|"$build_root"/lec_disabled/*) ;;
   *) exit 2 ;;

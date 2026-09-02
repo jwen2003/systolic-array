@@ -89,3 +89,5 @@
 - 结果只适用于N2/K2 baseline，不能外推到其他N/K或registered Feeder变体。
 
 机器可读结果位于被Git忽略的`build/openroad/clock_sweep/clock_sweep_summary.json`与`clock_sweep_summary.tsv`；每个配置目录还保存独立manifest、constraint hash、完整日志、stage JSON、final audit和单配置`clock_sweep_result.json`。
+
+Registered Boundary 变体的独立结构、500/667 MHz物理结果与架构裁决见 [09_registered_boundary_ppa_analysis.md](09_registered_boundary_ppa_analysis.md)。

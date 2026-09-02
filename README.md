@@ -131,6 +131,16 @@ cycle_idx → feeder/control → boundary PE accumulator
 
 这条路径从Controller counter进入Feeder/control selection，最终到达边界PE的`psum_out[17]` accumulator register。对当前小型N2/K2 core，关键路径主要由组合算术cell delay主导，而非长互连或clock path；该观察不能直接外推到更大的N/K配置。
 
+## Registered Boundary 实验结论
+
+独立的 Registered Boundary 变体在 Feeder 与 Array 之间增加一级 A/B data/valid 寄存器，保持 4 个 signed multiplier 与 4 个 accumulator datapath 不变。500 MHz post-route setup WNS 从 baseline 的 `+0.219901 ns` 提升到 `+0.475003 ns`；在 667 MHz，同目标频率下 final cells 减少 11.38%、final area 减少 3.97%、timing-repair buffers 减少 62.5%。代价是 RUN window 从 4 拍增加到 5 拍，non-overlap 协议下同频 operation throughput 降低 20%。
+
+因此 baseline 继续作为默认架构，Registered Boundary 作为 timing closure 与实现成本权衡的实验变体保留。完整结构、post-route 与吞吐率分析见 [docs/09_registered_boundary_ppa_analysis.md](docs/09_registered_boundary_ppa_analysis.md)。
+
+## 最小软件契约
+
+项目已冻结逻辑软件契约：workload 映射到固定硬件 shape，A/B 使用 signed `int8`、accumulator/result 使用 signed `int18`、host buffer 为 row-major；较小 shape 通过补零执行，command 遵循 `busy`/单拍 `start`/单拍 `done`，overflow 可选择暴露硬件 wrap 或由未来 wrapper 保守拒绝。该契约不表示 runtime、AXI 或 DMA 已实现，详见 [docs/10_minimal_software_contract.md](docs/10_minimal_software_contract.md)。
+
 ## 一键复现
 
 以下命令从仓库根目录运行。Linux/WSL环境需要相应的Verilator、固定OSS CAD Suite、Docker及匹配的ORFS checkout。
@@ -164,3 +174,7 @@ python3 scripts/check_openroad_results.py \
 - 尚未进行N/K physical scaling、clock sweep或activity-based power analysis；不得从单一N2/K2 baseline外推更大阵列的频率、面积、拥塞或功耗。
 
 本仓库的可审计技术细节、工具版本、warning分类及统计定义均保留在 `docs/` 和可重复脚本中；README仅汇总已经建立的结论。
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
