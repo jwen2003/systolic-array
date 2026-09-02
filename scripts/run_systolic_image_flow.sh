@@ -4,8 +4,13 @@ set -euo pipefail
 variant="${FLOW_VARIANT:-baseline}"
 dry_run="${DRY_RUN:-0}"
 registered_image="openroad/orfs@sha256:73bd87efa06758865277f347fbc6b932642d8ab21a5430c5ce5480aaa60c27d0"
-repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-orfs_root="${ORFS_ROOT:-/mnt/c/Projects/OpenROAD-flow-scripts}"
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+repo_root="$(cd -- "$script_dir/.." && pwd)"
+if [[ -z "${ORFS_ROOT:-}" ]]; then
+  echo "ORFS_ROOT is required. Example: export ORFS_ROOT=/path/to/OpenROAD-flow-scripts" >&2
+  exit 2
+fi
+orfs_root="$ORFS_ROOT"
 yosys_bin="${OSS_CAD_SUITE_ROOT:-$HOME/.local/opt/oss-cad-suite-20260830}/bin/yosys"
 orfs_commit="6101364b2d7909dd797e1e3e7f80695401cfa4e4"
 build_root="$(readlink -f "$repo_root/build/openroad")"
@@ -53,8 +58,8 @@ for rel in "$filelist_rel" "$config_rel" "$sdc_rel" physical/nangate45/frontend.
   [[ -f "$resolved" && "$resolved" == "$repo_root"/* ]] || { echo "Missing or unsafe repository file: $rel" >&2; exit 2; }
 done
 
-orfs_root="$(readlink -f "$orfs_root")"
-[[ "$orfs_root" == "/mnt/c/Projects/OpenROAD-flow-scripts" ]] || exit 2
+orfs_root="$(readlink -f -- "$orfs_root")"
+[[ -d "$orfs_root" && -d "$orfs_root/.git" ]] || { echo "ORFS_ROOT must name an existing Git checkout" >&2; exit 2; }
 [[ "$(git -C "$orfs_root" -c safe.directory="$orfs_root" rev-parse HEAD)" == "$orfs_commit" ]] || { echo "ORFS commit mismatch" >&2; exit 2; }
 
 if [[ "$variant" == "registered_boundary" ]]; then

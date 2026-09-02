@@ -85,16 +85,16 @@ oss-cad-suite-linux-x64-20260830.tgz
 SHA-256: 54ffdd32d9126ee0473a204a6b4ab98d9938c9f47013a42fe73d0822eae21dc7
 ```
 
-安装到独立用户目录：
+安装到独立的 local user installation，由环境变量记录其根目录：
 
 ```text
-/home/yttlj2003/.local/opt/oss-cad-suite-20260830
+$OSS_CAD_SUITE_ROOT
 ```
 
 实际使用的可执行文件和版本为：
 
 ```text
-/home/yttlj2003/.local/opt/oss-cad-suite-20260830/bin/yosys
+$OSS_CAD_SUITE_ROOT/bin/yosys
 Yosys 0.68+136 (git sha1 c30457480-dirty, Release, Clang /usr/bin/clang++ 21.1.8)
 ```
 
