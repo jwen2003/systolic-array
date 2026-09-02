@@ -70,7 +70,7 @@ docs/      设计意图、dataflow、微架构、验证、综合缩放与物理�
 build/     自动生成产物，不提交Git
 ```
 
-详细设计与证据链见 [docs/01_design_intent.md](docs/01_design_intent.md) 至 [docs/07_physical_implementation_plan.md](docs/07_physical_implementation_plan.md)。
+详细设计与证据链见 [docs/01_design_intent-zh_CN.md](docs/01_design_intent-zh_CN.md) 至 [docs/07_physical_implementation_plan-zh_CN.md](docs/07_physical_implementation_plan-zh_CN.md)。
 
 ## 验证方法与结果
 
@@ -96,7 +96,7 @@ Yosys generic flow 使用 read_slang elaboration，保存 pre-tech 与 techmap J
 - 固定 `N=2`，`K=1,2,3,4`：四个PE数据通路保持不变；主要变化来自controller/feeder选择逻辑与cycle counter。`K=3/4`跨越counter width边界，register bits由110增至111。
 - Generic cells是工具版本相关的逻辑规模代理，不是目标工艺standard cell、面积、Fmax或功耗。
 
-完整统计和口径见 [docs/06_synthesis_scaling_analysis.md](docs/06_synthesis_scaling_analysis.md)。
+完整统计和口径见 [docs/06_synthesis_scaling_analysis-zh_CN.md](docs/06_synthesis_scaling_analysis-zh_CN.md)。
 
 ## Nangate45 N2/K2 RTL-to-GDS baseline
 
@@ -135,11 +135,11 @@ cycle_idx → feeder/control → boundary PE accumulator
 
 独立的 Registered Boundary 变体在 Feeder 与 Array 之间增加一级 A/B data/valid 寄存器，保持 4 个 signed multiplier 与 4 个 accumulator datapath 不变。500 MHz post-route setup WNS 从 baseline 的 `+0.219901 ns` 提升到 `+0.475003 ns`；在 667 MHz，同目标频率下 final cells 减少 11.38%、final area 减少 3.97%、timing-repair buffers 减少 62.5%。代价是 RUN window 从 4 拍增加到 5 拍，non-overlap 协议下同频 operation throughput 降低 20%。
 
-因此 baseline 继续作为默认架构，Registered Boundary 作为 timing closure 与实现成本权衡的实验变体保留。完整结构、post-route 与吞吐率分析见 [docs/09_registered_boundary_ppa_analysis.md](docs/09_registered_boundary_ppa_analysis.md)。
+因此 baseline 继续作为默认架构，Registered Boundary 作为 timing closure 与实现成本权衡的实验变体保留。完整结构、post-route 与吞吐率分析见 [docs/09_registered_boundary_ppa_analysis-zh_CN.md](docs/09_registered_boundary_ppa_analysis-zh_CN.md)。
 
 ## 最小软件契约
 
-项目已冻结逻辑软件契约：workload 映射到固定硬件 shape，A/B 使用 signed `int8`、accumulator/result 使用 signed `int18`、host buffer 为 row-major；较小 shape 通过补零执行，command 遵循 `busy`/单拍 `start`/单拍 `done`，overflow 可选择暴露硬件 wrap 或由未来 wrapper 保守拒绝。该契约不表示 runtime、AXI 或 DMA 已实现，详见 [docs/10_minimal_software_contract.md](docs/10_minimal_software_contract.md)。
+项目已冻结逻辑软件契约：workload 映射到固定硬件 shape，A/B 使用 signed `int8`、accumulator/result 使用 signed `int18`、host buffer 为 row-major；较小 shape 通过补零执行，command 遵循 `busy`/单拍 `start`/单拍 `done`，overflow 可选择暴露硬件 wrap 或由未来 wrapper 保守拒绝。该契约不表示 runtime、AXI 或 DMA 已实现，详见 [docs/10_minimal_software_contract-zh_CN.md](docs/10_minimal_software_contract-zh_CN.md)。
 
 ## 一键复现
 
