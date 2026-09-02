@@ -1,3 +1,9 @@
+// One registered boundary stage between the Feeder and Array. Each A/B data
+// lane and its valid bit advances independently by one cycle. Synchronous
+// active-low reset has priority over clear, and clear has priority over capture;
+// inputs presented during clear are discarded.
+// The stage breaks the Feeder-selection-to-PE-multiplier combinational path,
+// but any timing or Fmax benefit remains dependent on physical implementation.
 module systolic_boundary_pipe #(
     parameter int N      = 2,
     parameter int DATA_W = 8

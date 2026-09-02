@@ -1,5 +1,10 @@
 `timescale 1ns/1ps
 
+// Self-checking directed test for signed PE arithmetic, extreme operands,
+// clear/MAC priority, accumulator hold, and independent A/B forwarding.
+// Stimulus changes on falling edges and checks registered state after rising
+// edges. Any $fatal is a contract failure; the final message means all directed
+// PE checks completed without a mismatch.
 module tb_systolic_pe;
 
     localparam int DATA_W = 8;

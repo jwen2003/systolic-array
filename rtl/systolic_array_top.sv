@@ -1,5 +1,10 @@
 `timescale 1ns/1ps
 
+// Default baseline Top: Controller drives a combinational Feeder whose skewed
+// boundary outputs enter the bare Array directly. N and K are elaboration-time
+// parameters, and upstream logic must hold both matrices stable while busy.
+// This parallel array interface is not an AXI, DMA, runtime, or backpressure
+// interface. done means every final output-stationary psum is already visible.
 module systolic_array_top #(
     parameter int N       = 2,
     parameter int K       = 2,

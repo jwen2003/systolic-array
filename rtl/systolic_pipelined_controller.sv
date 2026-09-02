@@ -1,5 +1,10 @@
 `timescale 1ns/1ps
 
+// Controller variant dedicated to the Registered Boundary Top. It preserves
+// baseline start, busy, clear, and one-cycle done semantics while extending RUN
+// to TOTAL_RUN_CYCLES=K+2*N-1 with LAST_CYCLE=K+2*N-2.
+// RUN zero clears accumulators and loads the Boundary, so the first Array MAC
+// occurs in RUN one and the final MAC aligns with done on the completion edge.
 module systolic_pipelined_controller #(
     parameter int N       = 2,
     parameter int K       = 2,

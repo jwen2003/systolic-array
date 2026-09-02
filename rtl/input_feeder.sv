@@ -1,5 +1,9 @@
 `timescale 1ns/1ps
 
+// Combinational boundary scheduler for the baseline array. It reads complete
+// matrices and derives skewed row/column injections from the current cycle.
+// The matrices are not stored here and must remain stable for the enabled RUN
+// window; this module neither accepts commands nor generates completion.
 module input_feeder #(
     parameter int N       = 2,
     parameter int K       = 2,
@@ -50,6 +54,7 @@ module input_feeder #(
         cycle_value = int'($unsigned(cycle_idx));
 
         // Invalid lanes carry zero data to keep waveforms deterministic.
+        // enable qualifies every lane so an idle feeder cannot inject a MAC.
         for (int i = 0; i < N; i++) begin
             a_left[i]       = '0;
             a_valid_left[i] = 1'b0;

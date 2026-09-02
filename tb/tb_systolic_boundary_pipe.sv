@@ -1,3 +1,8 @@
+// Self-checking directed test for one-cycle Boundary capture, clear-time input
+// discard, reset/clear priority, and lane-independent A/B valid behavior.
+// Inputs change on falling edges and outputs are checked after rising edges.
+// Any $fatal is a pipeline contract failure; the final message means all lanes,
+// signed values, and consecutive captures passed.
 module tb_systolic_boundary_pipe;
 
     timeunit 1ns;

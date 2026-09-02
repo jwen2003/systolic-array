@@ -1,5 +1,9 @@
 `timescale 1ns/1ps
 
+// Self-checking bare-array test using a manually skewed N2/K2 wavefront. It
+// checks spatial A/B propagation and the expected psum after each rising edge,
+// including drain, hold, and broadcast clear. Any $fatal is a cycle-level
+// topology failure; the final message means the full directed wavefront passed.
 module tb_systolic_array;
 
     localparam int N      = 2;

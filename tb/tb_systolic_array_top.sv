@@ -1,5 +1,10 @@
 `timescale 1ns/1ps
 
+// Self-checking baseline Top test for complete operations, exact completion
+// timing, result hold, and accumulator replacement on a second operation.
+// Matrices and start are driven away from active sampling edges; $fatal reports
+// a protocol or result mismatch, and the final message means all Top scenarios
+// and both parameter instances passed.
 module tb_systolic_array_top;
 
     localparam int DATA_W = 8;

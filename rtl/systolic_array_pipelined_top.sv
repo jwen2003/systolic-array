@@ -1,5 +1,10 @@
 `timescale 1ns/1ps
 
+// Experimental Registered Boundary Top, kept separate from the default
+// baseline. Data flows matrix -> Feeder -> Boundary register -> bare Array,
+// adding one RUN cycle and preventing a raw Feeder-to-multiplier bypass.
+// Idle !busy clears only Boundary state. PE accumulators are cleared solely by
+// Controller acc_clear; clearing them with !busy would destroy readable results.
 module systolic_array_pipelined_top #(
     parameter int N       = 2,
     parameter int K       = 2,

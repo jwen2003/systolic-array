@@ -1,5 +1,10 @@
 `timescale 1ns/1ps
 
+// Self-checking N2/K2 Registered Boundary integration test. It proves RUN zero
+// performs no MAC, traces the delayed wavefront through the RUN-four final
+// commit, aligns done with final psums, and checks a clean second operation.
+// Falling-edge stimulus avoids DUT races; any $fatal is a contract failure and
+// the final message means every directed integration checkpoint passed.
 module tb_systolic_array_pipelined_top;
 
     localparam int N       = 2;
