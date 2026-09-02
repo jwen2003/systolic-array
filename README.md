@@ -137,6 +137,10 @@ cycle_idx → feeder/control → boundary PE accumulator
 
 因此 baseline 继续作为默认架构，Registered Boundary 作为 timing closure 与实现成本权衡的实验变体保留。完整结构、post-route 与吞吐率分析见 [docs/09_registered_boundary_ppa_analysis.md](docs/09_registered_boundary_ppa_analysis.md)。
 
+## 最小软件契约
+
+项目已冻结逻辑软件契约：workload 映射到固定硬件 shape，A/B 使用 signed `int8`、accumulator/result 使用 signed `int18`、host buffer 为 row-major；较小 shape 通过补零执行，command 遵循 `busy`/单拍 `start`/单拍 `done`，overflow 可选择暴露硬件 wrap 或由未来 wrapper 保守拒绝。该契约不表示 runtime、AXI 或 DMA 已实现，详见 [docs/10_minimal_software_contract.md](docs/10_minimal_software_contract.md)。
+
 ## 一键复现
 
 以下命令从仓库根目录运行。Linux/WSL环境需要相应的Verilator、固定OSS CAD Suite、Docker及匹配的ORFS checkout。
