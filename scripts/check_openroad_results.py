@@ -29,10 +29,16 @@ def critical_path_breakdown(path: Path) -> dict[str, object]:
     if len(checks) != 1:
         raise ValueError("expected exactly one critical path")
     check = checks[0]
-    clock_path = check["source_clock_path"]
     data_path = check["source_path"]
-    source_clock_arrival = clock_path[-1]["arrival"]
-    cell_delay = data_path[0]["arrival"] - source_clock_arrival
+    clock_path = check.get("source_clock_path")
+    if clock_path:
+        source_reference = clock_path[-1]["arrival"]
+        cell_delay = data_path[0]["arrival"] - source_reference
+        startpoint_type = "register"
+    else:
+        source_reference = data_path[0]["arrival"]
+        cell_delay = 0.0
+        startpoint_type = "primary_input"
     net_delay = 0.0
     for previous, current in zip(data_path, data_path[1:]):
         delta = current["arrival"] - previous["arrival"]
@@ -42,15 +48,17 @@ def critical_path_breakdown(path: Path) -> dict[str, object]:
             cell_delay += delta
         else:
             raise ValueError("unexpected driver/load sequence in critical path JSON")
-    data_delay = data_path[-1]["arrival"] - source_clock_arrival
+    data_delay = data_path[-1]["arrival"] - source_reference
     return {
         "startpoint": check["startpoint"],
         "endpoint": check["endpoint"],
+        "startpoint_type": startpoint_type,
+        "data_arrival_ns": check["data_arrival_time"] * 1e9,
         "data_delay_ns": data_delay * 1e9,
         "cell_delay_ns": cell_delay * 1e9,
         "net_delay_ns": net_delay * 1e9,
-        "cell_delay_fraction": cell_delay / data_delay,
-        "net_delay_fraction": net_delay / data_delay,
+        "cell_delay_fraction": cell_delay / data_delay if data_delay else 0.0,
+        "net_delay_fraction": net_delay / data_delay if data_delay else 0.0,
     }
 
 

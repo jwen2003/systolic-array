@@ -1,0 +1,6 @@
+name	clock_period_ns	nominal_frequency_mhz	N	K	DATA_W	ACC_W
+clk_2500ps	2.500	400.000	2	2	8	18
+clk_2250ps	2.250	444.444	2	2	8	18
+clk_2000ps	2.000	500.000	2	2	8	18
+clk_1750ps	1.750	571.429	2	2	8	18
+clk_1500ps	1.500	666.667	2	2	8	18
