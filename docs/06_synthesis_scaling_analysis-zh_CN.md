@@ -47,7 +47,7 @@ $$
 | n2_k2 | 2 / 4 | 4 / 4 / 4 | 2 | 13 / 110 | 75 | 3337 | 834.250 | 27.500 |
 | n4_k2 | 4 / 16 | 16 / 16 / 16 | 3 | 55 / 497 | 215 | 13155 | 822.188 | 31.063 |
 
-- [已建立事实] 相对 `n1_k2`，$N$ 分别增长 $2\times$ 和 $4\times$，$N^2$、PE markers、multiplier 与 accumulator adder 分别精确增长 $4\times$ 和 $16\times$。
+- [已建立事实] 相对 `n1_k2`， $N$ 分别增长 $2\times$ 和 $4\times$， $N^2$、PE markers、multiplier 与 accumulator adder 分别精确增长 $4\times$ 和 $16\times$。
 - [已建立事实] generic cells 分别增长到 $4.001\times$ 和 $15.773\times$；generic cells/$N^2$ 为 834.000、834.250、822.188，表现为近似 $N^2$ 缩放而非严格相等。
 - [已建立事实] pre-tech cells 为 30、75、215，受固定控制开销、宽度变化与高层 cell 粒度影响，没有严格按 $N^2$ 增长。
 - [基于结构的解释] controller/feeder 的固定开销在小阵列中占比更高；随 $N$ 增长，MAC 数据通路在 generic 统计中占主导，因此总 generic cell 更接近 $N^2$ 趋势。这不能推出所有子模块都按 $N^2$ 增长。

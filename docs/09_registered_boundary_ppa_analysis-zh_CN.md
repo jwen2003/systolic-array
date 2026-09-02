@@ -38,7 +38,7 @@ $$
 \mathrm{TOTAL\_RUN\_CYCLES}=K+2N-1,
 $$
 
-最后周期为 $K+2N-2$。对 N2/K2，RUN cycle 为 0 至 4：RUN 0 只将 Feeder 输出装入 Boundary，并清空 PE accumulator；第一次 MAC 在 RUN 1，最后一次 MAC 在 RUN 4。PE$(i,j)$ 在 RUN cycle $t$ 的 pairing monitor 使用
+最后周期为 $K+2N-2$。对 N2/K2，RUN cycle 为 0 至 4：RUN 0 只将 Feeder 输出装入 Boundary，并清空 PE accumulator；第一次 MAC 在 RUN 1，最后一次 MAC 在 RUN 4。$\mathrm{PE}(i,j)$ 在 RUN cycle $t$ 的 pairing monitor 使用
 
 ```text
 k = cycle_idx - 1 - i - j

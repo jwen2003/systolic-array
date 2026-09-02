@@ -80,7 +80,7 @@ PE 不理解矩阵坐标、$k$ 的编号或整轮 operation 的进度。正确�
 
 ### 4.2 调度复杂度放在阵列边界
 
-不同 PE 到边界的传播距离不同。Input Feeder 必须通过 skew，使 $A[i][k]$ 和 $B[k][j]$ 在 PE$(i,j)$ 同拍到达，而不是要求 PE 暂存单边操作数并等待另一侧。
+不同 PE 到边界的传播距离不同。Input Feeder 必须通过 skew，使 $A[i][k]$ 和 $B[k][j]$ 在 $\mathrm{PE}(i,j)$ 同拍到达，而不是要求 PE 暂存单边操作数并等待另一侧。
 
 ### 4.3 正确性包括周期正确性
 
@@ -107,8 +107,8 @@ $$
 
 在 output-stationary 映射中：
 
-- PE$(i,j)$ 唯一负责 $C[i][j]$；
-- 每轮 operation 中，PE$(i,j)$ 应恰好执行 $K$ 次有效 MAC；
+- $\mathrm{PE}(i,j)$ 唯一负责 $C[i][j]$；
+- 每轮 operation 中， $\mathrm{PE}(i,j)$ 应恰好执行 $K$ 次有效 MAC；
 - 第 $k$ 次 MAC 必须使用 $A[i][k]$ 和 $B[k][j]$；
 - operation 完成后，PE accumulator 中保存最终 $C[i][j]$。
 

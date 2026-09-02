@@ -76,7 +76,7 @@ $$
 LAST\_CYCLE=K+2N-2
 $$
 
-RUN 0 只将 feeder 数据装入 Boundary，所有 PE 双 valid 必须为 0；PE$(i,j)$ 对第 $k$ 项执行 MAC 的周期为 $i+j+k+1$。最后一次 MAC 与 `done` 在 `LAST_CYCLE` 提交边沿后同步可见。每个 PE 仍执行 $K$ 次 MAC，最终矩阵结果不变。
+RUN 0 只将 feeder 数据装入 Boundary，所有 PE 双 valid 必须为 0；$\mathrm{PE}(i,j)$ 对第 $k$ 项执行 MAC 的周期为 $i+j+k+1$。最后一次 MAC 与 `done` 在 `LAST_CYCLE` 提交边沿后同步可见。每个 PE 仍执行 $K$ 次 MAC，最终矩阵结果不变。
 
 ## 5. 定向验证层次
 
@@ -161,7 +161,7 @@ baseline 参数化 TB 已通过以下检查：
 4. RUN 中除完成转换外，`cycle_idx` 每拍递增；
 5. reset 采样后 Controller 与全部 PE 状态归零；
 6. A/B 在整个 `busy` 窗口保持稳定；
-7. PE$(i,j)$ 在 baseline 周期 $i+j+k$ 使用 `A[i][k]` 与 `B[k][j]`；
+7. $\mathrm{PE}(i,j)$ 在 baseline 周期 $i+j+k$ 使用 `A[i][k]` 与 `B[k][j]`；
 8. 合法 $k$ 窗口外不得出现 PE 双 valid；
 9. 每个 PE 每轮 MAC 次数等于 $K$，全阵列总有效 MAC 数为 $N^2K$；
 10. `done` 与最后一次 accumulator 更新在同一提交边沿后可见。

@@ -27,7 +27,7 @@ The RTL baseline provides full-matrix parallel inputs and parallel result output
 
 ### Output-stationary
 
-Each PE$(i,j)$ retains a local `psum_out` and accumulates $K$ products. A propagates to the right across each row, B propagates downward through each column, and the partial sum remains in the PE. The PE consumes $A[i][k]$ and $B[k][j]$ in compute cycle $i+j+k$.
+Each $\mathrm{PE}(i,j)$ retains a local `psum_out` and accumulates $K$ products. A propagates to the right across each row, B propagates downward through each column, and the partial sum remains in the PE. The PE consumes $A[i][k]$ and $B[k][j]$ in compute cycle $i+j+k$.
 
 ### A/B skew
 
@@ -97,7 +97,7 @@ Verification progresses from local semantics to the system protocol: PE → Arra
 - The structural monitor, per-PE MAC-count monitor, cycle-by-cycle A/B/k pairing monitor, and controller/feeder/reset/input-stability protocol monitor all pass.
 - read_slang frontend equivalence: 843/843 `$equiv` cells proven.
 
-The cycle-by-cycle pairing monitor directly checks that PE$(i,j)$ receives $A[i][k]$ and $B[k][j]$ in cycle $i+j+k$. The MAC-count monitor requires every PE to commit exactly $K$ MAC operations per operation.
+The cycle-by-cycle pairing monitor directly checks that $\mathrm{PE}(i,j)$ receives $A[i][k]$ and $B[k][j]$ in cycle $i+j+k$. The MAC-count monitor requires every PE to commit exactly $K$ MAC operations per operation.
 
 ## Generic synthesis and N/K scaling
 

@@ -128,13 +128,17 @@ b_in ──► b_out register ──► lower PE
 
 两个 `DATA_W` 位 signed 输入的完整乘积宽度为：
 
-$$PROD\_W=2\times DATA\_W$$
+$$
+PROD\_W=2\times DATA\_W
+$$
 
 默认 `DATA_W = 8`，因此 `PROD_W = 16`。
 
 8-bit signed 输入范围为 $[-128,127]$。最大正乘积为：
 
-$$(-128)\times(-128)=16384$$
+$$
+(-128)\times(-128)=16384
+$$
 
 signed 15-bit 最大只能表示 16383，因此完整乘积必须使用 16-bit signed 表示。
 
@@ -142,7 +146,9 @@ signed 15-bit 最大只能表示 16383，因此完整乘积必须使用 16-bit s
 
 默认 MVP 最多累加四个乘积。最大正和为：
 
-$$4\times16384=65536$$
+$$
+4\times16384=65536
+$$
 
 signed 17-bit 的正数上限为 65535，因此默认采用 `ACC_W = 18`。
 
@@ -154,7 +160,9 @@ signed 17-bit 的正数上限为 65535，因此默认采用 `ACC_W = 18`。
 
 当前 RTL 的参数约束为：
 
-$$ACC\_W \ge 2\times DATA\_W$$
+$$
+ACC\_W \ge 2\times DATA\_W
+$$
 
 这只保证 accumulator 能容纳一个完整乘积，不自动保证任意 $K$ 下累加不溢出。
 
@@ -269,25 +277,25 @@ PE 定向 testbench 已通过 17 项检查，覆盖：
 | `a_valid_left[i]` | 与 `a_left[i]` 对齐的 valid |
 | `b_top[j]` | 从上边界进入第 $j$ 列的 B 数据 |
 | `b_valid_top[j]` | 与 `b_top[j]` 对齐的 valid |
-| `psum[i][j]` | PE$(i,j)$ 的本地 accumulator |
+| `psum[i][j]` | $\mathrm{PE}(i,j)$ 的本地 accumulator |
 | `acc_clear` | 同拍广播到全部 PE 的 accumulator clear |
 
 边界输入必须已经具有正确的 cycle-level skew。裸阵列不会纠正错误配对。
 
 ### 13.2 A 邻接规则
 
-对 PE$(i,j)$：
+对 $\mathrm{PE}(i,j)$：
 
 - 当 $j=0$ 时，A 输入来自 `a_left[i]`；
-- 当 $j>0$ 时，A 输入来自 PE$(i,j-1)$ 的 `a_out`；
+- 当 $j>0$ 时，A 输入来自 $\mathrm{PE}(i,j-1)$ 的 `a_out`；
 - A valid 始终沿完全相同的路径传播。
 
 ### 13.3 B 邻接规则
 
-对 PE$(i,j)$：
+对 $\mathrm{PE}(i,j)$：
 
 - 当 $i=0$ 时，B 输入来自 `b_top[j]`；
-- 当 $i>0$ 时，B 输入来自 PE$(i-1,j)$ 的 `b_out`；
+- 当 $i>0$ 时，B 输入来自 $\mathrm{PE}(i-1,j)$ 的 `b_out`；
 - B valid 始终沿完全相同的路径传播。
 
 ### 13.4 内部连线
@@ -301,7 +309,7 @@ logic signed [DATA_W-1:0] b_pipe       [N:0][N-1:0];
 logic                     b_valid_pipe [N:0][N-1:0];
 ```
 
-对 A 通路，`a_pipe[i][0]` 接收 `a_left[i]`，PE$(i,j)$ 从 `a_pipe[i][j]` 读取并写入 `a_pipe[i][j+1]`。对 B 通路，`b_pipe[0][j]` 接收 `b_top[j]`，PE$(i,j)$ 从 `b_pipe[i][j]` 读取并写入 `b_pipe[i+1][j]`。valid 使用完全相同的索引规则。
+对 A 通路，`a_pipe[i][0]` 接收 `a_left[i]`， $\mathrm{PE}(i,j)$ 从 `a_pipe[i][j]` 读取并写入 `a_pipe[i][j+1]`。对 B 通路，`b_pipe[0][j]` 接收 `b_top[j]`， $\mathrm{PE}(i,j)$ 从 `b_pipe[i][j]` 读取并写入 `b_pipe[i+1][j]`。valid 使用完全相同的索引规则。
 
 这种表示在 $N=1$ 时仍保留完整的“输入边界 → PE → 输出边界”通路，不会产生只为邻居服务、但在单 PE 配置中完全未使用的 link array。最右侧 A 和最下侧 B 的末端位置当前不暴露为模块端口，也不参与结果计算。矩阵结果直接由 `psum[i][j]` 暴露。
 
@@ -329,7 +337,7 @@ $$
 
 层次化 monitor 直接观察每个 PE 的 `a_valid_pe_in && b_valid_pe_in`，并在 operation 完成后检查每个 PE 的 MAC 次数等于 $K$。该 monitor 不修改可综合数据通路。
 
-逐拍 pairing monitor 已对全局 Cycle $t$ 计算 $k=t-i-j$，并在 $0\le k<K$ 时检查 PE$(i,j)$ 的输入为 `A[i][k]` 与 `B[k][j]`；无合法 $k$ 时检查不得出现双 valid。该 monitor 已在八种配置、872 个 operation 中通过，且未修改可综合数据通路。
+逐拍 pairing monitor 已对全局 Cycle $t$ 计算 $k=t-i-j$，并在 $0\le k<K$ 时检查 $\mathrm{PE}(i,j)$ 的输入为 `A[i][k]` 与 `B[k][j]`；无合法 $k$ 时检查不得出现双 valid。该 monitor 已在八种配置、872 个 operation 中通过，且未修改可综合数据通路。
 
 参数化端到端 TB 已加入系统协议 monitor，覆盖 controller 计数与完成转换、`done` 单拍、`done`/`busy` 互斥、`acc_clear` 定义、idle feeder valid、同步 reset 后全部 PE 状态，以及 RUN 期间输入矩阵稳定性。上述检查与九类确定性 corner cases 已由统一回归脚本在八种配置中通过。
 
