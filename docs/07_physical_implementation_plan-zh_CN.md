@@ -16,7 +16,7 @@
 
 [已建立事实] 所有正式PPA数字来自上述固定镜像的一次完整fresh flow，没有复用或拼接旧镜像的netlist、ODB、placement、CTS、route或timing结果。
 
-[已建立事实] $N=2$、$K=2$设计已经完成从baseline RTL、read_slang frontend、Nangate45映射、floorplan、placement、CTS、global/detailed routing、RC extraction、final STA到GDS和KLayout DRC的完整流程。
+[已建立事实] $N=2$、$K=2$ 设计已经完成从baseline RTL、read_slang frontend、Nangate45映射、floorplan、placement、CTS、global/detailed routing、RC extraction、final STA到GDS和KLayout DRC的完整流程。
 
 ## 2. Kepler Formal兼容性与`LEC_CHECK`
 
@@ -177,7 +177,7 @@ u_controller.cycle_idx[0]/Q
 
 ## 12. `acc_clear`与协议审查
 
-[已建立事实] RTL regression继续检查matrix input稳定、controller/feeder/reset协议、每PE恰好$K$次MAC以及逐拍A/B/k pairing。Physical flow没有增加false path或multicycle path。
+[已建立事实] RTL regression继续检查matrix input稳定、controller/feeder/reset协议、每PE恰好 $K$ 次MAC以及逐拍A/B/k pairing。Physical flow没有增加false path或multicycle path。
 
 [基于结果的解释] Final flow增加了timing-repair buffers，且max fanout violation为0；因此高扇出网络已达到本次library/constraint下的工具检查要求。但mapped netlist已匿名化部分组合net，不能仅凭名称把全部repair buffer归因于`acc_clear`，本轮不宣称其具体buffer树结构已被独立证明。
 
@@ -187,4 +187,4 @@ u_controller.cycle_idx[0]/Q
 
 [验证缺口] 没有多corner/multi-mode分析、foundry-qualified extraction、OCV/AOCV/POCV、真实switching activity或silicon correlation。Activity-based power分析尚未执行；OpenROAD流程中出现的约0.823 mW仅是默认假设下的工具估计，不是本baseline的可信功耗结论。因此本轮建立了面积、时序和物理可实现性基准，但不得称为商业工艺signoff或完整PPA。
 
-[待验证假设] 后续若扩大$N$或$K$，关键路径、拥塞、`acc_clear`扇出和布线延迟占比可能显著变化；在完成受控scaling sweep前不得外推本次N2/K2结果。
+[待验证假设] 后续若扩大 $N$ 或 $K$，关键路径、拥塞、`acc_clear`扇出和布线延迟占比可能显著变化；在完成受控scaling sweep前不得外推本次N2/K2结果。

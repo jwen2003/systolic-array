@@ -27,7 +27,7 @@ RTL baseline 包含完整矩阵并行输入与并行结果输出，但不包含 
 
 ### Output-stationary
 
-每个 PE$(i,j)$ 保存一个局部 `psum_out`，依次累加 $K$ 个乘积；A 沿行向右传播，B 沿列向下传播，输出部分和不离开 PE。PE 在第 $i+j+k$ 个计算周期使用 $A[i][k]$ 与 $B[k][j]$。
+每个 $\mathrm{PE}(i,j)$ 保存一个局部 `psum_out`，依次累加 $K$ 个乘积；A 沿行向右传播，B 沿列向下传播，输出部分和不离开 PE。PE 在第 $i+j+k$ 个计算周期使用 $A[i][k]$ 与 $B[k][j]$。
 
 ### A/B skew
 
@@ -97,7 +97,7 @@ build/     自动生成产物，不提交Git
 - structural monitor、每PE MAC count monitor、逐拍 A/B/k pairing monitor、controller/feeder/reset/input-stability protocol monitor 全部通过；
 - read_slang frontend equivalence：843/843个`$equiv` cell proven。
 
-逐拍 pairing monitor 直接检查 PE$(i,j)$ 在周期 $i+j+k$ 接收 $A[i][k]$ 和 $B[k][j]$；MAC count monitor 要求每个 PE 每次 operation 恰好提交 $K$ 次 MAC。
+逐拍 pairing monitor 直接检查 $\mathrm{PE}(i,j)$ 在周期 $i+j+k$ 接收 $A[i][k]$ 和 $B[k][j]$；MAC count monitor 要求每个 PE 每次 operation 恰好提交 $K$ 次 MAC。
 
 ## Generic synthesis 与 N/K scaling
 

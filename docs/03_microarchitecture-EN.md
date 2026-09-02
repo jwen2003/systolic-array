@@ -114,11 +114,15 @@ The expected critical path in the baseline PE is therefore multiplier → adder 
 
 The full product of two signed `DATA_W`-bit inputs has width:
 
-$$PROD\_W=2\times DATA\_W$$
+$$
+PROD\_W=2\times DATA\_W
+$$
 
 With default `DATA_W = 8`, `PROD_W = 16`. The 8-bit signed range is $[-128,127]$, and the maximum positive product is:
 
-$$(-128)\times(-128)=16384$$
+$$
+(-128)\times(-128)=16384
+$$
 
 A signed 15-bit value can represent at most 16383, so the full product requires a signed 16-bit representation.
 
@@ -126,7 +130,9 @@ A signed 15-bit value can represent at most 16383, so the full product requires 
 
 The default MVP accumulates at most four products. The maximum positive sum is:
 
-$$4\times16384=65536$$
+$$
+4\times16384=65536
+$$
 
 A signed 17-bit value has a maximum positive value of 65535, so the default is `ACC_W = 18`.
 
@@ -138,7 +144,9 @@ Before the 16-bit `product` enters the 18-bit accumulator addition, its sign bit
 
 The current RTL parameter constraint is:
 
-$$ACC\_W \ge 2\times DATA\_W$$
+$$
+ACC\_W \ge 2\times DATA\_W
+$$
 
 This only guarantees that the accumulator can hold one full product; it does not guarantee overflow-free accumulation for arbitrary $K$.
 
@@ -243,18 +251,18 @@ Future key assertions should still freeze these properties:
 | `a_valid_left[i]` | Valid aligned with `a_left[i]` |
 | `b_top[j]` | B data entering column $j$ from the top boundary |
 | `b_valid_top[j]` | Valid aligned with `b_top[j]` |
-| `psum[i][j]` | Local accumulator of PE$(i,j)$ |
+| `psum[i][j]` | Local accumulator of $\mathrm{PE}(i,j)$ |
 | `acc_clear` | Accumulator clear broadcast to every PE in the same cycle |
 
 Boundary inputs must already contain the correct cycle-level skew. The bare array does not repair incorrect pairing.
 
 ### 13.2 A Neighbor Rule
 
-For PE$(i,j)$, A comes from `a_left[i]` when $j=0$, and from `a_out` of PE$(i,j-1)$ when $j>0$. A valid always propagates along exactly the same path.
+For $\mathrm{PE}(i,j)$, A comes from `a_left[i]` when $j=0$, and from `a_out` of $\mathrm{PE}(i,j-1)$ when $j>0$. A valid always propagates along exactly the same path.
 
 ### 13.3 B Neighbor Rule
 
-For PE$(i,j)$, B comes from `b_top[j]` when $i=0$, and from `b_out` of PE$(i-1,j)$ when $i>0$. B valid always propagates along exactly the same path.
+For $\mathrm{PE}(i,j)$, B comes from `b_top[j]` when $i=0$, and from `b_out` of $\mathrm{PE}(i-1,j)$ when $i>0$. B valid always propagates along exactly the same path.
 
 ### 13.4 Internal Wiring
 
@@ -267,7 +275,7 @@ logic signed [DATA_W-1:0] b_pipe       [N:0][N-1:0];
 logic                     b_valid_pipe [N:0][N-1:0];
 ```
 
-For A, `a_pipe[i][0]` receives `a_left[i]`; PE$(i,j)$ reads `a_pipe[i][j]` and writes `a_pipe[i][j+1]`. For B, `b_pipe[0][j]` receives `b_top[j]`; PE$(i,j)$ reads `b_pipe[i][j]` and writes `b_pipe[i+1][j]`. Valid uses identical indexing.
+For A, `a_pipe[i][0]` receives `a_left[i]`; $\mathrm{PE}(i,j)$ reads `a_pipe[i][j]` and writes `a_pipe[i][j+1]`. For B, `b_pipe[0][j]` receives `b_top[j]`; $\mathrm{PE}(i,j)$ reads `b_pipe[i][j]` and writes `b_pipe[i+1][j]`. Valid uses identical indexing.
 
 For $N=1$, this representation still retains the complete input boundary → PE → output boundary path, rather than creating link arrays used only by neighbors and completely unused in a single-PE configuration. The terminal A position on the right and B position at the bottom are not exposed as ports and do not participate in result computation. Matrix results are exposed directly through `psum[i][j]`.
 
@@ -295,7 +303,7 @@ All five baseline RTL modules compile and pass directed regression under Verilat
 
 A hierarchical monitor directly observes `a_valid_pe_in && b_valid_pe_in` for each PE and checks after completion that each PE's MAC count equals $K$. The monitor does not modify the synthesizable datapath.
 
-The cycle-by-cycle pairing monitor computes $k=t-i-j$ for global Cycle $t$. When $0\le k<K$, it checks PE$(i,j)$ inputs against `A[i][k]` and `B[k][j]`; without a legal $k$, it rejects coincident valid signals. The monitor passes eight configurations and 872 operations without modifying the synthesizable datapath.
+The cycle-by-cycle pairing monitor computes $k=t-i-j$ for global Cycle $t$. When $0\le k<K$, it checks $\mathrm{PE}(i,j)$ inputs against `A[i][k]` and `B[k][j]`; without a legal $k$, it rejects coincident valid signals. The monitor passes eight configurations and 872 operations without modifying the synthesizable datapath.
 
 The parameterized end-to-end TB includes system protocol monitors covering Controller count/completion transitions, the one-cycle `done`, `done`/`busy` mutual exclusion, the `acc_clear` definition, idle feeder valid, all PE state after synchronous reset, and input-matrix stability during RUN. These checks and nine deterministic corner-case classes pass across eight configurations under the unified regression script.
 

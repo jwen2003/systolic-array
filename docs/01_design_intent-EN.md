@@ -80,7 +80,7 @@ A PE does not know matrix coordinates, the $k$ index, or overall operation progr
 
 ### 4.2 Scheduling Complexity Belongs at the Array Boundary
 
-PEs have different propagation distances from the boundaries. Through skew, the Input Feeder must make $A[i][k]$ and $B[k][j]$ reach PE$(i,j)$ in the same cycle, rather than requiring a PE to store a one-sided operand while waiting for the other.
+PEs have different propagation distances from the boundaries. Through skew, the Input Feeder must make $A[i][k]$ and $B[k][j]$ reach $\mathrm{PE}(i,j)$ in the same cycle, rather than requiring a PE to store a one-sided operand while waiting for the other.
 
 ### 4.3 Correctness Includes Cycle Accuracy
 
@@ -107,8 +107,8 @@ $$
 
 Under the output-stationary mapping:
 
-- PE$(i,j)$ is solely responsible for $C[i][j]$.
-- During each operation, PE$(i,j)$ performs exactly $K$ valid MACs.
+- $\mathrm{PE}(i,j)$ is solely responsible for $C[i][j]$.
+- During each operation, $\mathrm{PE}(i,j)$ performs exactly $K$ valid MACs.
 - MAC $k$ uses $A[i][k]$ and $B[k][j]$.
 - At completion, the PE accumulator holds the final $C[i][j]$.
 

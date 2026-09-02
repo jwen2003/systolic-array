@@ -55,7 +55,7 @@ $$
 LAST\_CYCLE=K+2N-2
 $$
 
-RUN 0 only loads the Boundary; no PE may see dual valid. PE$(i,j)$ executes item $k$ in cycle $i+j+k+1$. The final MAC and `done` become visible after the same `LAST_CYCLE` commit edge. Each PE still performs $K$ MACs and the final matrix is unchanged.
+RUN 0 only loads the Boundary; no PE may see dual valid. $\mathrm{PE}(i,j)$ executes item $k$ in cycle $i+j+k+1$. The final MAC and `done` become visible after the same `LAST_CYCLE` commit edge. Each PE still performs $K$ MACs and the final matrix is unchanged.
 
 ## 5. Directed Verification
 
@@ -108,7 +108,7 @@ The tracked repository proves that this parameterized TB and these monitors are 
 
 ## 8. Protocol and Structural Monitors
 
-Baseline monitors require idle feeder valid to be zero; `acc_clear` to equal `busy && cycle_idx == 0`; one-cycle `done` mutually exclusive with `busy`; correct `cycle_idx` progression; reset clearing Controller and PE state; stable matrices throughout `busy`; PE$(i,j)$ pairing with item $k$ in cycle $i+j+k$; no dual valid outside the legal $k$ window; exactly $K$ MACs per PE and $N^2K$ total MACs; and synchronized final accumulator update and `done`. These hierarchical monitors observe state without changing the synthesizable datapath.
+Baseline monitors require idle feeder valid to be zero; `acc_clear` to equal `busy && cycle_idx == 0`; one-cycle `done` mutually exclusive with `busy`; correct `cycle_idx` progression; reset clearing Controller and PE state; stable matrices throughout `busy`; $\mathrm{PE}(i,j)$ pairing with item $k$ in cycle $i+j+k$; no dual valid outside the legal $k$ window; exactly $K$ MACs per PE and $N^2K$ total MACs; and synchronized final accumulator update and `done`. These hierarchical monitors observe state without changing the synthesizable datapath.
 
 ## 9. Formal and Physical-Flow Status
 

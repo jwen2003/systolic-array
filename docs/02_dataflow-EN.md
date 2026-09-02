@@ -19,11 +19,11 @@ $$
 
 The current design statically maps each output element to one processing element (PE):
 
-- PE$(i,j)$ owns $C[i][j]$.
+- $\mathrm{PE}(i,j)$ owns $C[i][j]$.
 - $A[i][k]$ propagates from left to right along row $i$.
 - $B[k][j]$ propagates from top to bottom along column $j$.
-- PE$(i,j)$ performs a MAC when A and B with the same $k$ arrive in the same cycle.
-- The partial sum remains inside PE$(i,j)$ until the operation completes.
+- $\mathrm{PE}(i,j)$ performs a MAC when A and B with the same $k$ arrive in the same cycle.
+- The partial sum remains inside $\mathrm{PE}(i,j)$ until the operation completes.
 
 This is output-stationary: the output partial sum, rather than A or B, remains stationary.
 
@@ -50,7 +50,7 @@ Therefore:
 
 ## 4. Why Skew Is Required
 
-For PE$(i,j)$:
+For $\mathrm{PE}(i,j)$:
 
 - A enters at the left boundary of row $i$ and requires $j$ cycles to propagate right.
 - B enters at the top boundary of column $j$ and requires $i$ cycles to propagate downward.
@@ -62,7 +62,7 @@ The current boundary-injection rules are:
 - Inject $A[i][k]$ into row $i$ in cycle $i+k$.
 - Inject $B[k][j]$ into column $j$ in cycle $j+k$.
 
-At PE$(i,j)$:
+At $\mathrm{PE}(i,j)$:
 
 - A arrives at $(i+k)+j$.
 - B arrives at $(j+k)+i$.
@@ -73,7 +73,7 @@ $$
 t(i,j,k)=i+j+k
 $$
 
-Thus $A[i][k]$ and $B[k][j]$ with the same $k$ meet at PE$(i,j)$ in the same cycle.
+Thus $A[i][k]$ and $B[k][j]$ with the same $k$ meet at $\mathrm{PE}(i,j)$ in the same cycle.
 
 This delay compensates for different spatial propagation distances; it does not wait for a preceding PE to finish computing.
 
@@ -163,7 +163,7 @@ This example proves:
 
 ## 8. First and Last Valid MAC
 
-PE$(i,j)$ performs the MAC for item $k$ in cycle:
+$\mathrm{PE}(i,j)$ performs the MAC for item $k$ in cycle:
 
 $$
 t(i,j,k)=i+j+k
@@ -173,8 +173,8 @@ Therefore:
 
 - First valid MAC: $i+j$.
 - Last valid MAC: $i+j+K-1$.
-- PE$(0,0)$ starts first.
-- PE$(N-1,N-1)$ finishes last.
+- $\mathrm{PE}(0,0)$ starts first.
+- $\mathrm{PE}(N-1,N-1)$ finishes last.
 
 From the first MAC in Cycle 0 through the final MAC, there are:
 
@@ -226,7 +226,7 @@ RTL and verification must preserve:
 3. Valid experiences exactly the same delay as its associated data.
 4. One-sided valid A/B may still propagate independently.
 5. The accumulator updates only when both valid signals are asserted.
-6. PE$(i,j)$ accumulates only products belonging to $C[i][j]$.
+6. $\mathrm{PE}(i,j)$ accumulates only products belonging to $C[i][j]$.
 7. Every PE performs exactly $K$ MACs in each operation.
 8. In the stall-free baseline, MAC item $k$ occurs in cycle $i+j+k$.
 
