@@ -1,6 +1,6 @@
 # Baseline systolic array synthesis sources.
-rtl/systolic_pe.sv
-rtl/systolic_array.sv
-rtl/input_feeder.sv
-rtl/systolic_controller.sv
-rtl/systolic_array_top.sv
+rtl/core/systolic_pe.sv
+rtl/core/systolic_array.sv
+rtl/core/input_feeder.sv
+rtl/core/systolic_controller.sv
+rtl/core/systolic_array_top.sv

@@ -1,7 +1,7 @@
 # Registered-boundary systolic array synthesis sources.
-rtl/systolic_pe.sv
-rtl/systolic_array.sv
-rtl/input_feeder.sv
-rtl/systolic_boundary_pipe.sv
-rtl/systolic_pipelined_controller.sv
-rtl/systolic_array_pipelined_top.sv
+rtl/core/systolic_pe.sv
+rtl/core/systolic_array.sv
+rtl/core/input_feeder.sv
+rtl/core/systolic_boundary_pipe.sv
+rtl/core/systolic_pipelined_controller.sv
+rtl/core/systolic_array_pipelined_top.sv

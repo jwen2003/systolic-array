@@ -2,6 +2,9 @@
 build/
 obj_dir/
 
+# Wrapper unit-test output (also covered by build/ above)
+build/wrapper/tb_axi_lite_slave/
+
 # Waveforms
 *.vcd
 *.fst
@@ -9,6 +12,7 @@ obj_dir/
 
 # Logs
 *.log
+!reports/wrapper/packed/*.log
 
 # Python cache
 __pycache__/

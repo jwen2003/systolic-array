@@ -7,11 +7,11 @@ random_tests="${RANDOM_TESTS:-100}"
 verilator_bin="${VERILATOR:-verilator}"
 
 rtl=(
-  rtl/systolic_pe.sv
-  rtl/systolic_array.sv
-  rtl/input_feeder.sv
-  rtl/systolic_controller.sv
-  rtl/systolic_array_top.sv
+  rtl/core/systolic_pe.sv
+  rtl/core/systolic_array.sv
+  rtl/core/input_feeder.sv
+  rtl/core/systolic_controller.sv
+  rtl/core/systolic_array_top.sv
 )
 
 run_test() {
@@ -33,16 +33,16 @@ run_test() {
 cd "$repo_root"
 mkdir -p "$build_root"
 
-run_test pe         tb_systolic_pe         tb/tb_systolic_pe.sv
-run_test array      tb_systolic_array      tb/tb_systolic_array.sv
-run_test feeder     tb_input_feeder        tb/tb_input_feeder.sv
-run_test controller tb_systolic_controller tb/tb_systolic_controller.sv
-run_test top        tb_systolic_array_top  tb/tb_systolic_array_top.sv
+run_test pe         tb_systolic_pe         tb/core/tb_systolic_pe.sv
+run_test array      tb_systolic_array      tb/core/tb_systolic_array.sv
+run_test feeder     tb_input_feeder        tb/core/tb_input_feeder.sv
+run_test controller tb_systolic_controller tb/core/tb_systolic_controller.sv
+run_test top        tb_systolic_array_top  tb/core/tb_systolic_array_top.sv
 
 for config in "1 1" "2 1" "1 2" "2 2" "4 2" "2 3" "2 4" "4 4"; do
   read -r n k <<<"$config"
   run_test "random_n${n}_k${k}" tb_systolic_array_random \
-    tb/tb_systolic_array_random.sv \
+    tb/core/tb_systolic_array_random.sv \
     "-GN=$n" "-GK=$k" "-GNUM_RANDOM_TESTS=$random_tests"
 done
 

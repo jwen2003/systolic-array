@@ -1,0 +1,3 @@
+n,k,path,length,master_gap,operation,write_transactions,burst_beats,data_cycles,master_only,slave_only,both,predicted_load,measured_load,measured_total
+2,17,BURST,16,0,0,6,68,68,0,0,0,82,82,120
+2,17,BURST,16,0,1,6,68,68,0,0,0,82,82,120

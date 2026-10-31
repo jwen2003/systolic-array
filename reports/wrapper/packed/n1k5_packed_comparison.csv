@@ -1,0 +1,7 @@
+n,k,path,length,operation,beats,bursts,last_commit_cycles,write_complete_cycles,confirmed_load_cycles,total_cycles
+1,5,PACKED,1,0,4,4,11,12,14,32
+1,5,PACKED,1,1,4,4,11,12,14,32
+1,5,PACKED,4,0,4,2,7,8,10,28
+1,5,PACKED,4,1,4,2,7,8,10,28
+1,5,PACKED,16,0,4,2,7,8,10,28
+1,5,PACKED,16,1,4,2,7,8,10,28

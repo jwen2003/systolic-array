@@ -1,0 +1,9 @@
+PASS Burst L=16 gap=0 op=0 load=74 total=112
+PASS Burst L=16 gap=0 op=1 load=74 total=112
+PASS packed L=1 op=0 write=48 last_commit=47 confirmed_load=50 total=88
+PASS packed L=1 op=1 write=48 last_commit=47 confirmed_load=50 total=88
+PASS packed L=4 op=0 write=24 last_commit=23 confirmed_load=26 total=64
+PASS packed L=4 op=1 write=24 last_commit=23 confirmed_load=26 total=64
+PASS packed L=16 op=0 write=20 last_commit=19 confirmed_load=22 total=60
+PASS packed L=16 op=1 write=20 last_commit=19 confirmed_load=22 total=60
+PASS packed integration: 725 checks

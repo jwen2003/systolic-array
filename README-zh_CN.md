@@ -1,205 +1,63 @@
-# Systolic Array MVP
+# Systolic Array：计算核心与软件可访问加速器
 
 [English](README.md) | [简体中文](README-zh_CN.md)
 
-一个面向 RTL/Digital Design、Hardware Performance 与 Validation 的参数化矩阵乘加项目。项目从逐拍 dataflow 推导出可综合 RTL，建立定向、随机、结构与协议验证，并完成 generic synthesis scaling 实验以及一套固定环境下的 Nangate45 RTL-to-GDS baseline。
+项目主线是 RTL/微架构设计：从 output-stationary 阵列的逐拍调度，扩展到 AXI、片上输入存储、命令状态和 C++ 调用，再用模型、验证与性能/物理证据评估取舍。
 
-## 项目目标与范围
+## 当前版本（2026-10-30）
 
-本项目计算有符号整数矩阵乘法：
+- **V1 Core 已冻结**：A[N][K]×B[K][N]，N² PE，signed INT8 / INT18 wrap，K 与 N 独立，skew 配对，计算窗口 K+2N-2。
+- **V2 Wrapper 已实现并仿真**：Lite 控制/读写、buffer/bitmap、LOAD/RUN/DONE、sticky errors 与 ACK、受限 AXI4 Burst 写和事务仲裁。
+- **打包实验已完成 RTL 对照**：可选 packed aliases，每拍最多四个 INT8 并行写；Core 不变。
+- C++ 是 Host Runtime/BFM 与实验 driver；不是 Linux 设备驱动。Burst 不是 DMA。
 
-$$
-C[i][j] = \sum_{k=0}^{K-1} A[i][k] \times B[k][j]
-$$
+入口：[文档索引](docs/README-zh_CN.md)、本页当前状态摘要、[系统架构](docs/wrapper/11_system_architecture-zh_CN.md)、[寄存器契约](docs/wrapper/12_register_contract-zh_CN.md)。
 
-当前 baseline 的参数含义为：
+## 软件到 Core 的闭环
 
-| 参数 | 定义 |
-|---|---|
-| `N` | 方形 PE array 的行数和列数，也是输出矩阵 $C$ 的维度 |
-| `K` | 每个输出元素的 inner-product length；独立于 `N` |
-| `DATA_W` | A/B signed operand width |
-| `ACC_W` | 每个 PE 中 output-stationary accumulator/result width |
+Host 准备 A/B → Lite/Burst 装载 → bitmap 完整 → START → 冻结 Core 计算 → Device 保持 DONE → Lite 读 C → ACK 释放并清空 bitmap。总线背压止于 Wrapper，Core 波前不 stall；C 直接索引 Core psum，无独立结果副本。
 
-RTL baseline 包含完整矩阵并行输入与并行结果输出，但不包含 SRAM、DMA、矩阵装载协议、ready/valid backpressure 或重叠 operation。调用方需要在启动前准备输入矩阵，并在 operation 期间保持其稳定。
+模块职责和 ownership 见 [11](docs/wrapper/11_system_architecture-zh_CN.md)；具体 AXI 子集见 [13](docs/wrapper/13_axi_protocol-zh_CN.md)。旧 Runtime 只接受完整硬件 shape，不自动 padding；V1 文档 10 中的更一般逻辑 API 仍是上游抽象。
 
-## Dataflow 与周期模型
+## 已建立的性能证据
 
-### Output-stationary
+N2/K17、连续供数、相同时钟计数，软件确认就绪口径：
 
-每个 $\mathrm{PE}(i,j)$ 保存一个局部 `psum_out`，依次累加 $K$ 个乘积；A 沿行向右传播，B 沿列向下传播，输出部分和不离开 PE。PE 在第 $i+j+k$ 个计算周期使用 $A[i][k]$ 与 $B[k][j]$。
+| 方案 | load 周期 | invocation 周期（含 ACK） |
+|---|---:|---:|
+| Lite on dual Top | 206 | 244 |
+| 未打包 Burst L16 | 82 | 120 |
+| 并行打包 Burst L16 | 24 | 62 |
 
-### A/B skew
+packing 末拍提交/最终写响应/软件确认分别为 21/22/24。比较必须用同一终点。旧/新 driver 数值模式不同，当前控制延迟不依赖数值，结果各自通过 golden；严格同输入配对与真实软件准备成本仍待补充。详见 [Burst](docs/performance/16_burst_analysis-zh_CN.md)、[打包](docs/performance/17_packed_analysis-zh_CN.md)。
 
-不同 PE 到输入边界的距离不同。组合式 Input Feeder 使用 `cycle_idx` 生成边界 skew：
+四种 packed shape 加旧 Burst 回归共 3772 checks；24 行 packed RTL 数据与独立模型一致。检查数包含重复 helper，不等于独立场景数。V1 的 872 operation、843/843 frontend equivalence 与 V2 证据分别记账。
 
-- 第 $i$ 行在周期 $t$ 注入 `A[i][t-i]`；
-- 第 $j$ 列在周期 $t$ 注入 `B[t-j][j]`；
-- 超出合法 $k$ 窗口的 lane 输出 invalid。
+## V1 物理取舍保留
 
-这样，相同 $k$ 的 A/B operand 会在目标 PE 同拍相遇，无需在 PE 内缓存单边 operand 等待配对。
+Nangate45 N2/K2 Core 的 400–667 MHz sweep 已完成；400 MHz final cell area 3522.64 µm²，setup WNS +0.720010 ns，hold +0.065023 ns。666.667 MHz 是最高受测通过 target，不是 silicon Fmax。
 
-### `start` / `busy` / `done`
+Registered Boundary 在 667 MHz 降低 area 3.97%、timing-repair buffers 62.5%，但 RUN 从 4 增至 5 拍，同频 non-overlap 吞吐降低 20%；baseline 仍默认。详见 [物理实现](docs/implementation/07_physical_implementation_plan-zh_CN.md)、[变体](docs/implementation/09_registered_boundary_ppa_analysis-zh_CN.md)。这些数字不代表 V2 Wrapper。
 
-1. Controller 在 IDLE 上升沿采样到 `start=1`，随后进入 RUN，`busy=1`、`cycle_idx=0`。
-2. 该边沿后的组合区间是 Cycle 0；下一上升沿提交第一批 MAC，同时完成 accumulator clear 与首项累加。
-3. RUN 中的新 `start` 被忽略。
-4. 计算窗口为 $K+2N-2$ 个周期，最后周期编号为 $K+2N-3$。
-5. 最后一次 MAC 提交后，`busy=0`、`done=1`，全部 $N^2$ 个结果有效。
-6. `done` 是单周期 pulse，下一拍自动清零。
-
-`rst_n` 是 synchronous active-low reset。400 MHz active-operation STA 假设 reset 在 operation 开始前完成释放，并在运行期间保持稳定；该 STA 不验证外部 reset assertion/deassertion 接口时序。
-
-## RTL模块
-
-| 模块 | 职责 |
-|---|---|
-| `systolic_pe` | signed multiply、sign extension、accumulate，以及 A/B/valid 单拍转发 |
-| `systolic_array` | 实例化 $N\times N$ PE，连接水平A pipe、垂直B pipe和并行 `psum` result |
-| `input_feeder` | 根据 `cycle_idx` 对完整输入矩阵做组合索引，产生边界A/B skew与valid |
-| `systolic_controller` | 接受 `start`，生成 `busy`、`cycle_idx`、`acc_clear`与单拍 `done` |
-| `systolic_array_top` | 连接 Controller、Feeder和Array，定义完整operation协议 |
-
-## 仓库结构
-
-```text
-rtl/       五个冻结的SystemVerilog baseline模块
-tb/        五组定向TB和参数化端到端random/corner TB
-synth/     Yosys generic synthesis Tcl与受控配置矩阵
-physical/  Nangate45约束、frontend、equivalence与final audit Tcl
-scripts/   regression、synthesis、structure check和physical audit入口
-docs/      设计意图、dataflow、微架构、验证、综合缩放与物理实现证据
-build/     自动生成产物，不提交Git
-```
-
-详细设计与证据文档：
-
-- [01 设计意图](docs/01_design_intent-zh_CN.md)
-- [02 数据流](docs/02_dataflow-zh_CN.md)
-- [03 微架构](docs/03_microarchitecture-zh_CN.md)
-- [04 验证计划](docs/04_verification_plan-zh_CN.md)
-- [05 综合与 PPA 计划](docs/05_synthesis_and_ppa_plan-zh_CN.md)
-- [06 综合缩放分析](docs/06_synthesis_scaling_analysis-zh_CN.md)
-- [07 物理实现与 PPA 分析](docs/07_physical_implementation_plan-zh_CN.md)
-- [08 时钟频率缩放分析](docs/08_clock_sweep_analysis-zh_CN.md)
-- [09 Registered Boundary PPA 分析](docs/09_registered_boundary_ppa_analysis-zh_CN.md)
-- [10 最小软件契约](docs/10_minimal_software_contract-zh_CN.md)
-
-## 验证方法与结果
-
-验证从局部语义逐层推进到系统协议：PE → Array → Feeder → Controller → Top，并使用同一 signed reference model 检查最终矩阵结果。
-
-- 5组定向 testbench：PE、Array、Feeder、Controller、Top；
-- 8种参数配置：`N/K=1/1, 2/1, 1/2, 2/2, 4/2, 2/3, 2/4, 4/4`；
-- 每种配置包含9个确定性 corner cases和100个固定seed random operations；
-- 每种109个corner/random operations，共872个参数化端到端 operation；
-- Verilator `--Wall`、结果值与精确完成周期全部通过；
-- structural monitor、每PE MAC count monitor、逐拍 A/B/k pairing monitor、controller/feeder/reset/input-stability protocol monitor 全部通过；
-- read_slang frontend equivalence：843/843个`$equiv` cell proven。
-
-逐拍 pairing monitor 直接检查 $\mathrm{PE}(i,j)$ 在周期 $i+j+k$ 接收 $A[i][k]$ 和 $B[k][j]$；MAC count monitor 要求每个 PE 每次 operation 恰好提交 $K$ 次 MAC。
-
-## Generic synthesis 与 N/K scaling
-
-Yosys generic flow 使用 read_slang elaboration，保存 pre-tech 与 techmap JSON/netlist，并自动检查 signed multiplier width/sign extension、$N^2$ 个 multiplier、$N^2$ 个 accumulator adder、register width及非空结构。
-
-受控实验保持 `DATA_W=8`、`ACC_W=18`：
-
-- 固定 `K=2`，`N=1,2,4`：multiplier、accumulator与result marker按 $N^2$ 增长；generic cell总量呈近似 $N^2$ scaling。固定controller/feeder开销使小规模点不严格服从比例。
-- 固定 `N=2`，`K=1,2,3,4`：四个PE数据通路保持不变；主要变化来自controller/feeder选择逻辑与cycle counter。`K=3/4`跨越counter width边界，register bits由110增至111。
-- Generic cells是工具版本相关的逻辑规模代理，不是目标工艺standard cell、面积、Fmax或功耗。
-
-完整统计和口径见 [docs/06_synthesis_scaling_analysis-zh_CN.md](docs/06_synthesis_scaling_analysis-zh_CN.md)。
-
-## Nangate45 N2/K2 RTL-to-GDS baseline
-
-物理baseline固定为 `N=2`、`K=2`、`DATA_W=8`、`ACC_W=18`，ORFS commit `6101364b2d7909dd797e1e3e7f80695401cfa4e4`，镜像 `openroad/orfs@sha256:73bd87efa06758865277f347fbc6b932642d8ab21a5430c5ce5480aaa60c27d0`。
-
-以下结果使用复用Butterfly的400 MHz active-operation评测口径：2.500 ns clock period、0.050 ns uncertainty；reset在operation前释放并在运行期间稳定。
-
-| 指标 | 结果 |
-|---|---:|
-| Final setup WNS | **+0.72001 ns** |
-| Final hold WNS | **+0.0650233 ns** |
-| Final functional standard-cell area | **3,522.64 µm²** |
-| Functional standard cells | **2,068** |
-| Global-route overflow | **0** |
-| Detailed-route DRC | **0** |
-| KLayout DRC | **0** |
-| Final GDS | 已生成 |
-
-Global-route和detailed-route wirelength来自不同阶段与统计定义，项目分别保存原始结果，但不直接比较或计算改善比例。
-
-## Baseline 400–667 MHz clock sweep
-
-| Target | Setup WNS | Final cells | Final area |
-|---:|---:|---:|---:|
-| 400.000 MHz | +0.720010 ns | 2,068 | 3,522.64 µm² |
-| 444.444 MHz | +0.475454 ns | 2,067 | 3,521.84 µm² |
-| 500.000 MHz | +0.219901 ns | 2,068 | 3,523.17 µm² |
-| 571.429 MHz | +0.085547 ns | 2,080 | 3,529.82 µm² |
-| 666.667 MHz | +0.024937 ns | 2,372 | 3,896.63 µm² |
-
-五个频点均以fresh flow完成RTL-to-GDS，setup/hold均满足，unconstrained endpoints、global overflow、detailed-route DRC和KLayout DRC均为0。571.429 MHz开始出现实现成本增长，666.667 MHz的cell/area与timing-repair成本出现明显跃升。最高受测频点仍通过，因此本次实验没有测得首个失败频点，666.667 MHz也不能称为silicon Fmax。完整过程与指标见 [docs/08_clock_sweep_analysis-zh_CN.md](docs/08_clock_sweep_analysis-zh_CN.md)。
-
-## 关键路径分析
-
-Post-route extracted critical path 为：
-
-```text
-cycle_idx → feeder/control → boundary PE accumulator
-```
-
-- Data delay：`1.69648 ns`；
-- Cell delay占比：约`99.63%`；
-- Net delay占比：约`0.37%`。
-
-这条路径从Controller counter进入Feeder/control selection，最终到达边界PE的`psum_out[17]` accumulator register。对当前小型N2/K2 core，关键路径主要由组合算术cell delay主导，而非长互连或clock path；该观察不能直接外推到更大的N/K配置。
-
-## Registered Boundary 实验结论
-
-独立的 Registered Boundary 变体在 Feeder 与 Array 之间增加一级 A/B data/valid 寄存器，保持 4 个 signed multiplier 与 4 个 accumulator datapath 不变。500 MHz post-route setup WNS 从 baseline 的 `+0.219901 ns` 提升到 `+0.475003 ns`；在 667 MHz，同目标频率下 final cells 减少 11.38%、final area 减少 3.97%、timing-repair buffers 减少 62.5%。代价是 RUN window 从 4 拍增加到 5 拍，non-overlap 协议下同频 operation throughput 降低 20%。
-
-因此 baseline 继续作为默认架构，Registered Boundary 作为 timing closure 与实现成本权衡的实验变体保留。完整结构、post-route 与吞吐率分析见 [docs/09_registered_boundary_ppa_analysis-zh_CN.md](docs/09_registered_boundary_ppa_analysis-zh_CN.md)。
-
-## 最小软件契约
-
-项目已冻结逻辑软件契约：workload 映射到固定硬件 shape，A/B 使用 signed `int8`、accumulator/result 使用 signed `int18`、host buffer 为 row-major；较小 shape 通过补零执行，command 遵循 `busy`/单拍 `start`/单拍 `done`，overflow 可选择暴露硬件 wrap 或由未来 wrapper 保守拒绝。该契约不表示 runtime、AXI 或 DMA 已实现，详见 [docs/10_minimal_software_contract-zh_CN.md](docs/10_minimal_software_contract-zh_CN.md)。
-
-## 一键复现
-
-以下命令从仓库根目录运行。Linux/WSL环境需要相应的Verilator、固定OSS CAD Suite、Docker及匹配的ORFS checkout。
+## 复现与结构
 
 ```bash
-# 5组定向TB + 8种参数配置，共872个端到端operation
-scripts/run_regression.sh
-
-# 8个受控N/K配置的generic synthesis与自动结构检查
-scripts/run_synth.sh
-
-# 对已有N2/K2 final ODB/SDC/SPEF重新执行非破坏性post-route STA audit
-ORFS_ROOT=/path/to/OpenROAD-flow-scripts scripts/run_openroad_final_audit.sh
-
-# 校验已有完整物理结果与机器指标
-python3 scripts/check_openroad_results.py \
-  build/openroad/lec_disabled/systolic_n2_k2_full
+bash scripts/run_wrapper_integration.sh
+bash scripts/run_burst_comparison.sh
+bash scripts/run_packed_comparison.sh
+python3 scripts/check_docs.py
 ```
 
-`run_openroad_final_audit.sh`不会重新执行完整RTL-to-GDS，但要求匹配的固定ORFS commit、固定Docker image，以及已有且非空的final ODB/SDC/SPEF。
+rtl/core 为冻结核心；rtl/wrapper 为外围；tb/core、tb/wrapper/unit、tb/integration 分别保存 Core、wrapper unit 与集成测试；sim/wrapper、burst、packed 为软件与实验；models/wrapper 保存解析模型；reports/wrapper 保存测量快照；docs 按 core、wrapper、software、verification、performance、implementation 分目录。build 是生成产物。
 
-## 结论边界与未完成事项
+V1 regression/synthesis/physical 命令、固定工具环境及约束保留于对应文档，需要完整原仓库。此次只更新文档，不重跑历史物理实验。
 
-- Nangate45/FreePDK45是开源参考平台；结果不是商业工艺signoff。
-- 当前没有基于真实activity、multi-corner library与silicon correlation的可信功耗结果，不宣称完整PPA。
-- 尚未完成multi-corner/multi-mode signoff、OCV/AOCV/POCV或foundry-qualified extraction。
-- Baseline RTL到read_slang derived frontend equivalence已证明。
-- Post-synthesis equivalence状态为`inconclusive_tool_scalability`：未发现反例，但求解未完成，不能称为通过。
-- Kepler stage LEC因主机CPU上可复现的`SIGILL`而以正式配置`LEC_CHECK=0`禁用；CTS、STA、routing、extraction、GDS与DRC没有被跳过。
-- Post-route equivalence未证明。
-- 尚未进行N/K physical scaling或activity-based power analysis；已完成的clock sweep仅覆盖N2/K2 baseline，不得外推到更大阵列、其他corner或silicon Fmax。
+## 尚未建立与下一步
 
-本仓库的可审计技术细节、工具版本、warning分类及统计定义均保留在 `docs/` 和可重复脚本中；README仅汇总已经建立的结论。
+V2 尚无后端面积/频率、真实 CPU/DDR/PCIe 时间、可信功耗或最终 Pareto。post-synthesis equivalence inconclusive、Kepler CPU SIGILL 限制、post-route 未证明保留；没有商业 signoff 结论。
+
+先复现、掌握模型与契约，再结合软件准备和物理反馈筛候选。DMA/双缓冲按瓶颈触发；WS/OS 和 2D→1D 为后续独立微架构实验，尚未实现。见 [路线](docs/performance/18_codesign_roadmap-zh_CN.md)。
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE).
+MIT；许可证沿用原仓库 LICENSE 文件。
