@@ -1,0 +1,15 @@
+mode,event,cycle
+UNPACKED,first_request,4
+UNPACKED,writes_complete,84
+UNPACKED,ready_check_complete,86
+UNPACKED,device_start,88
+UNPACKED,device_done,108
+UNPACKED,last_c_response,119
+UNPACKED,ack_complete,122
+PACKED,first_request,128
+PACKED,writes_complete,150
+PACKED,ready_check_complete,152
+PACKED,device_start,154
+PACKED,device_done,174
+PACKED,last_c_response,185
+PACKED,ack_complete,188

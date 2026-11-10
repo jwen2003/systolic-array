@@ -1,0 +1,2 @@
+run,startpoint,endpoint,source_clock_latency_ns,clock_to_q_ns,combinational_cell_delay_ns,combinational_net_delay_ns,data_arrival_ns,target_clock_latency_ns,path_clock_skew_ns,setup_time_ns,clock_uncertainty_ns,required_time_ns,slack_ns,combinational_cells,buffer_or_inverter_cells
+cap_margin_10_2p5ns,u_core.u_controller.cycle_idx[1]$_SDFFE_PN0P_/Q,u_core.u_array.gen_row[0].gen_col[0].u_pe.psum_out[17]$_SDFFE_PN0P_/D,0.169300,0.156400,2.108200,0.015100,2.449000,0.175800,0.006500,0.037650,0.050000,2.588000,0.139100,36,3

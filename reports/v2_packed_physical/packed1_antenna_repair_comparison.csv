@@ -1,0 +1,3 @@
+run,setup_wns_ns,hold_wns_ns,functional_area_um2,timing_repair_buffers,klayout_drc_items
+packed1_default,0.151526,0.00698192,12952.084,1083,1
+packed1_input_buffer_fix,0.149201,0.00803893,12924.984,1066,0

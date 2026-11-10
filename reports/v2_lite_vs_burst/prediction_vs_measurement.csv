@@ -1,0 +1,6 @@
+max_length,input_transactions,predicted_write_cycles,measured_write_cycles,measured_load_with_ready,delta
+1,68,204,204,206,0
+2,34,136,136,138,0
+4,18,104,104,106,0
+8,10,88,88,90,0
+16,6,80,80,82,0

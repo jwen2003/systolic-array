@@ -1,0 +1,13 @@
+run,stage,setup_wns_ns,setup_tns_ns,hold_wns_ns,hold_tns_ns,functional_cells,functional_area_um2,max_cap_violations,max_slew_violations,max_fanout_violations,global_overflow,detailed_drc,completed
+baseline_2p5ns,synthesis,unavailable,unavailable,unavailable,unavailable,5165,10928.078,unavailable,unavailable,unavailable,unavailable,unavailable,true
+baseline_2p5ns,detailed_placement,0.127891,0,-0.0154451,-0.0308585,5273,10884.5,0,0,0,unavailable,unavailable,true
+baseline_2p5ns,cts,0.130004,0,0.00248637,0,5816,11386.7,0,0,0,unavailable,unavailable,true
+baseline_2p5ns,global_route,0.0808635,0,0.00341216,0,5816,11386.7,1,0,0,0,unavailable,true
+baseline_2p5ns,detailed_route,unavailable,unavailable,unavailable,unavailable,5816,11386.7,unavailable,unavailable,unavailable,0,0,true
+baseline_2p5ns,extracted_final,0.127300,0,0.00676159,0,5816,11386.7,2,0,0,0,0,true
+cap_margin_10_2p5ns,synthesis,unavailable,unavailable,unavailable,unavailable,5165,10928.078,unavailable,unavailable,unavailable,unavailable,unavailable,true
+cap_margin_10_2p5ns,detailed_placement,0.131937,0,-0.0157078,-0.0311527,5284,10903.1,0,0,0,unavailable,unavailable,true
+cap_margin_10_2p5ns,cts,0.141404,0,0.00387201,0,5833,11417.3,0,0,0,unavailable,unavailable,true
+cap_margin_10_2p5ns,global_route,0.0933662,0,0.00557160,0,5834,11418.6,0,0,0,0,unavailable,true
+cap_margin_10_2p5ns,detailed_route,unavailable,unavailable,unavailable,unavailable,5834,11418.6,unavailable,unavailable,unavailable,0,0,true
+cap_margin_10_2p5ns,extracted_final,0.139143,0,0.00345954,0,5834,11418.6,0,0,0,0,0,true

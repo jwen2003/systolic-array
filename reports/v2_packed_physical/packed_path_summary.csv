@@ -1,0 +1,3 @@
+path_class,startpoint,endpoint,slack_ns,arrival_ns
+current_addr_to_matrix,u_burst.current_addr[24]$_SDFFE_PN0P_,u_device.a_matrix[7]$_DFFE_PP_,1.448011,1.140177
+current_addr_to_bitmap,u_burst.current_addr[24]$_SDFFE_PN0P_,u_device.a_written[0]$_SDFF_PN0_,1.502475,1.099314

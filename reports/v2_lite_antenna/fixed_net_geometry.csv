@@ -1,0 +1,6 @@
+net,layer,x_min_um,y_min_um,x_max_um,y_max_um,iterms,instances
+s_axi_araddr[4],metal6,52.665,0.07,52.805,2.1,input30/A,"input30:BUF_X1@52.06,1.4"
+s_axi_araddr[4],metal3,52.12,1.995,52.77,2.065,input30/A,"input30:BUF_X1@52.06,1.4"
+s_axi_araddr[5],metal6,53.225,0.07,53.365,0.42,input31/A,"input31:BUF_X1@52.63,1.4"
+s_axi_araddr[5],metal3,52.69,0.315,53.33,0.385,input31/A,"input31:BUF_X1@52.63,1.4"
+s_axi_araddr[5],metal2,52.69,0.315,52.76,2.065,input31/A,"input31:BUF_X1@52.63,1.4"

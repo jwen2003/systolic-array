@@ -1,0 +1,19 @@
+path,segment,delay_ns,accounting,basis,confidence
+input_to_register,external input delay,0.250000,additive,"SDC, excluded from combinational logic",high
+input_to_register,launch sequential arc,0.000000,additive,launch DFF clock-to-Q,high
+input_to_register,buffer/inverter,1.441588,additive,mapped cell types,high
+input_to_register,unknown/shared non-buffer logic,9.424437,additive,flattening removed reliable RTL ownership,low
+input_to_register,wire-load net delay,0.004155,additive,OpenSTA input-pin increments under 5K_hvratio_1_1,high
+input_to_register,address arithmetic,unavailable,evidence_only_not_additive,present in RTL/pre-tech cone; mapped source ownership is not retained,medium
+input_to_register,range/permission/bitmap decode,unavailable,evidence_only_not_additive,present in RTL/pre-tech cone; mapped source ownership is not retained,medium
+input_to_register,data selection,unavailable,evidence_only_not_additive,present in RTL/pre-tech cone; mapped source ownership is not retained,medium
+input_to_register,write enable/hold logic,unavailable,evidence_only_not_additive,present in RTL/pre-tech cone; mapped source ownership is not retained,low
+register_to_register,external input delay,0.000000,additive,"SDC, excluded from combinational logic",high
+register_to_register,launch sequential arc,0.092712,additive,launch DFF clock-to-Q,high
+register_to_register,buffer/inverter,1.666442,additive,mapped cell types,high
+register_to_register,unknown/shared non-buffer logic,9.106428,additive,flattening removed reliable RTL ownership,low
+register_to_register,wire-load net delay,0.004540,additive,OpenSTA input-pin increments under 5K_hvratio_1_1,high
+register_to_register,address arithmetic,unavailable,evidence_only_not_additive,present in RTL/pre-tech cone; mapped source ownership is not retained,medium
+register_to_register,range/permission/bitmap decode,unavailable,evidence_only_not_additive,present in RTL/pre-tech cone; mapped source ownership is not retained,medium
+register_to_register,data selection,unavailable,evidence_only_not_additive,present in RTL/pre-tech cone; mapped source ownership is not retained,medium
+register_to_register,write enable/hold logic,unavailable,evidence_only_not_additive,present in RTL/pre-tech cone; mapped source ownership is not retained,medium

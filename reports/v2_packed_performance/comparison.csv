@@ -1,0 +1,3 @@
+mode,write_transactions,write_beats,load_a,load_b,pure_write,ready_check,load_with_ready,start_access,start_cycle,done_cycle,compute_cycles,done_poll,poll_reads,read_c,ack,end_to_end,repeat_task,useful_input_bytes_per_write_cycle
+UNPACKED,6,68,40,40,80,2,82,3,88,108,20,22,11,8,3,115,118,0.85
+PACKED,2,18,11,11,22,2,24,3,154,174,20,22,11,8,3,57,60,3.09091

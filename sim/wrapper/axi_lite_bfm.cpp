@@ -53,6 +53,7 @@ CycleSample AxiLiteBfm::tick() {
     dut_.clk = 0;
     dut_.eval();
     ++cycles_;
+    if (observer_) observer_(cycles_);
     return s;
 }
 
@@ -96,7 +97,7 @@ void AxiLiteBfm::check_response(std::uint8_t resp, const char* channel,
 }
 
 void AxiLiteBfm::axi_write(std::uint32_t addr, std::uint32_t data,
-                          std::uint8_t strb) {
+                          std::uint8_t strb, unsigned response_hold) {
     require_usable();
     if (strb > 0xF) throw std::invalid_argument("WSTRB must fit four bits");
     const auto begin = cycles_;
@@ -116,6 +117,13 @@ void AxiLiteBfm::axi_write(std::uint32_t addr, std::uint32_t data,
     }
     dut_.s_axi_awvalid = 0;
     dut_.s_axi_wvalid = 0;
+    for (unsigned i = 0; i < response_hold; ++i) {
+        dut_.s_axi_bready = 0;
+        check_timeout(begin, "held B response", addr);
+        (void)tick();
+        if (!dut_.s_axi_bvalid)
+            throw std::runtime_error("BVALID did not remain asserted under backpressure");
+    }
     dut_.s_axi_bready = 1;
     while (true) {
         check_timeout(begin, "B response", addr);
@@ -128,7 +136,7 @@ void AxiLiteBfm::axi_write(std::uint32_t addr, std::uint32_t data,
     }
 }
 
-std::uint32_t AxiLiteBfm::axi_read(std::uint32_t addr) {
+std::uint32_t AxiLiteBfm::axi_read(std::uint32_t addr, unsigned response_hold) {
     require_usable();
     const auto begin = cycles_;
     dut_.s_axi_araddr = addr;
@@ -139,6 +147,13 @@ std::uint32_t AxiLiteBfm::axi_read(std::uint32_t addr) {
         if (tick().ar_fire) break;
     }
     dut_.s_axi_arvalid = 0;
+    for (unsigned i = 0; i < response_hold; ++i) {
+        dut_.s_axi_rready = 0;
+        check_timeout(begin, "held R response", addr);
+        (void)tick();
+        if (!dut_.s_axi_rvalid)
+            throw std::runtime_error("RVALID did not remain asserted under backpressure");
+    }
     dut_.s_axi_rready = 1;
     while (true) {
         check_timeout(begin, "R response", addr);

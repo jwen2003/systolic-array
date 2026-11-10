@@ -1,0 +1,8 @@
+design,stage,setup_wns_ns,setup_tns_ns,hold_wns_ns,hold_tns_ns,instance_area_um2,electrical_violations,global_overflow,detailed_route_drc,openroad_antenna,klayout_drc,completed
+Burst,synthesis,unavailable,unavailable,unavailable,unavailable,11545.730,unavailable,unavailable,unavailable,unavailable,unavailable,yes
+Burst,floorplan,0.115013,0,-0.0389183,-0.288240,11546.8,unavailable,unavailable,unavailable,unavailable,unavailable,yes
+Burst,global_placement,0.176815,0,-0.0136090,-0.0228617,11505.0,unavailable,unavailable,unavailable,unavailable,unavailable,yes
+Burst,detailed_placement,0.171497,0,-0.0128871,-0.0225758,11523.7,unavailable,unavailable,unavailable,unavailable,unavailable,yes
+Burst,cts,0.172796,0,0.000711015,0,12228.6,unavailable,unavailable,unavailable,unavailable,unavailable,yes
+Burst,global_route,0.125637,0,0.00110725,0,12232.0,3_max_cap_before_repair,0,unavailable,0,unavailable,yes
+Burst,final_extracted,0.172356,0,0.0123354,0,12232.0,0,0,0,0,0,yes

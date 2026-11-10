@@ -1,0 +1,62 @@
+utc=2026-11-06T09:11:07Z
+git_head=b5077a7537c0929f4b0b97793ff1cfee4671c3cd
+git_status_begin
+ M rtl/wrapper/systolic_device.sv
+ M sim/burst/axi_burst_bfm.cpp
+ M sim/burst/axi_burst_bfm.hpp
+ M sim/wrapper/axi_lite_bfm.cpp
+ M sim/wrapper/axi_lite_bfm.hpp
+ M tb/wrapper/unit/tb_systolic_device.sv
+?? physical/nangate45_burst_physical/
+?? physical/nangate45_lite/
+?? physical/nangate45_lite_comparable/
+?? physical/nangate45_lite_physical/
+?? physical/nangate45_lite_vs_burst/
+?? physical/nangate45_packed_synth_sta/
+?? reports/v2_burst_physical/
+?? reports/v2_lite_antenna/
+?? reports/v2_lite_constant_decode_sta/
+?? reports/v2_lite_path_diagnosis/
+?? reports/v2_lite_physical/
+?? reports/v2_lite_synth_sta/
+?? reports/v2_lite_vs_burst/
+?? scripts/audit_v2_lite_antenna.py
+?? scripts/diagnose_v2_lite_paths.py
+?? scripts/run_v2_burst_physical.sh
+?? scripts/run_v2_constant_decode_tests.sh
+?? scripts/run_v2_lite_comparable_physical.sh
+?? scripts/run_v2_lite_constant_decode_diagnosis.sh
+?? scripts/run_v2_lite_constant_decode_sta.sh
+?? scripts/run_v2_lite_path_diagnosis.sh
+?? scripts/run_v2_lite_physical.sh
+?? scripts/run_v2_lite_synth_sta.sh
+?? scripts/run_v2_lite_vs_burst.sh
+?? scripts/run_v2_lite_vs_burst_synth_sta.sh
+?? scripts/run_v2_packed_synth_sta.sh
+?? scripts/summarize_v2_lite_constant_decode.py
+?? scripts/summarize_v2_lite_synth_sta.py
+?? sim/comparison/
+?? synth/filelists/systolic_axi_burst_top.f
+?? synth/filelists/systolic_axi_lite_top.f
+git_status_end
+top=systolic_axi_burst_top
+N=2
+K=17
+DATA_W=8
+ACC_W=18
+PACKED_ENABLE=0
+orfs_commit=6101364b2d7909dd797e1e3e7f80695401cfa4e4
+image=openroad/orfs@sha256:73bd87efa06758865277f347fbc6b932642d8ab21a5430c5ce5480aaa60c27d0
+image_id=sha256:73bd87efa06758865277f347fbc6b932642d8ab21a5430c5ce5480aaa60c27d0 image_created=2026-08-18T04:55:54.300893555Z image_arch=amd64
+Yosys 0.68+post (git sha1 UNKNOWN, Release, GNU /usr/local/bin/wrapped-cc/g++ 11.4.0)
+26Q3-1305-gf552262465
+3.1.0
+Yosys 0.68+136 (git sha1 c30457480-dirty, Release, Clang /usr/bin/clang++ 21.1.8)
+clock_period_ns=2.500
+clock_uncertainty_ns=0.050
+input_delay_max_ns=0.250
+input_delay_min_ns=0.000
+input_transition_ns=0.050
+output_load_pf=0.010
+wire_load=5K_hvratio_1_1
+config=physical/nangate45_packed_synth_sta/config_packed0.mk

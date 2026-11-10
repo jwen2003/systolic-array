@@ -133,6 +133,23 @@ module tb_systolic_device;
         read_word(32'h0028, 8); read_word(32'h002c, 18);
         read_word(A, 0); read_word(B, 0);
 
+        // Exercise fixed-address decode across an A row boundary and at the
+        // last element. Full-address comparisons must reject high aliases.
+        write_word(A + 4*K, 32'hffff_fffb);
+        check(a_matrix[1][0] === -8'sd5, "A cross-row element maps directly");
+        check(dut.a_written[K] && $countones(dut.a_written) == 1,
+              "only cross-row A bitmap bit is set");
+        write_word(A + 4*(N*K-1), 32'h0000_007f);
+        check(a_matrix[N-1][K-1] === 8'sd127, "A last element maps directly");
+        check(dut.a_written[N*K-1] && $countones(dut.a_written) == 2,
+              "only addressed A bitmap bits are set");
+        write_word(32'h1000_1000 + 4*K, 32'h55, 4'hf, 1);
+        read_word(32'h1000_1000 + 4*K, 0, 1);
+        check(a_matrix[1][0] === -8'sd5 && $countones(dut.a_written) == 2,
+              "high address alias cannot modify A storage or bitmap");
+        read_word(ERRORS, 32'h04);
+        write_word(ERRORS, 32'hff);
+
         // Repeated writes cannot substitute for loading distinct elements.
         repeat (4) write_word(A, 32'h80);
         read_word(A, 32'hffff_ff80);

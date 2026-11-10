@@ -1,0 +1,17 @@
+packed_enable,stage,setup_wns_ns,setup_tns_ns,hold_wns_ns,hold_tns_ns,area_um2,cells
+0,1_synth,unavailable,unavailable,unavailable,unavailable,11372,5542
+0,2_1_floorplan,0.0939344,0,-0.0389183,-0.183755,11373.1,5544
+0,3_3_place_gp,0.120378,0,-0.0163071,-0.0263451,11359.3,5685
+0,3_5_place_dp,0.113692,0,-0.0153307,-0.0247598,11376,5697
+0,4_1_cts,0.123848,0,0.00227794,0,12070.5,6480
+0,5_1_grt,0.0696945,0,0.000525885,0,12073.7,6484
+0,5_2_route,unavailable,unavailable,unavailable,unavailable,unavailable,unavailable
+0,6_report,0.115657,0,0.00489359,0,12073.7,13945
+1,1_synth,unavailable,unavailable,unavailable,unavailable,12109.1,5889
+1,2_1_floorplan,0.153217,0,-0.0385744,-0.251917,12110.2,5891
+1,3_3_place_gp,0.159116,0,-0.0157838,-0.0248101,12101.4,6075
+1,3_5_place_dp,0.154693,0,-0.0160523,-0.0246053,12113.1,6082
+1,4_1_cts,0.150636,0,-0.00054648,-0.00054648,12997.6,7096
+1,5_1_grt,0.10113,0,0.00309894,0,12998.4,7097
+1,5_2_route,unavailable,unavailable,unavailable,unavailable,unavailable,unavailable
+1,6_report,0.149201,0,0.00803893,0,12998.4,14817

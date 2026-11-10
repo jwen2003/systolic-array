@@ -24,6 +24,7 @@ BurstSample AxiBurstBfm::step() {
     d_.contextp()->timeInc(1); d_.clk=1; d_.eval();
     d_.contextp()->timeInc(1); d_.clk=0; d_.eval();
     ++cycles_;
+    if (observer_) observer_(cycles_);
     return s;
 }
 void AxiBurstBfm::reset() {
@@ -50,7 +51,8 @@ void AxiBurstBfm::deadline(std::uint64_t begin, const char* phase) {
 void AxiBurstBfm::response(std::uint8_t value, const char* channel) {
     if (value) throw std::runtime_error(std::string(channel)+" response="+std::to_string(value));
 }
-void AxiBurstBfm::axi_write(std::uint32_t addr, std::uint32_t data, std::uint8_t strb) {
+void AxiBurstBfm::axi_write(std::uint32_t addr, std::uint32_t data, std::uint8_t strb,
+                            unsigned response_hold) {
     require_usable();
     if (strb>15) throw std::invalid_argument("WSTRB must fit four bits");
     const auto begin=cycles_;
@@ -63,16 +65,26 @@ void AxiBurstBfm::axi_write(std::uint32_t addr, std::uint32_t data, std::uint8_t
         const auto s=step(); aw=aw || s.law; w=w || s.lw;
     }
     d_.s_axi_awvalid=0; d_.s_axi_wvalid=0; d_.s_axi_bready=1;
+    for (unsigned i=0;i<response_hold;++i) {
+        d_.s_axi_bready=0; deadline(begin,"Held Lite B"); step();
+        if (!d_.s_axi_bvalid) throw std::runtime_error("Lite BVALID lost under backpressure");
+    }
+    d_.s_axi_bready=1;
     while (true) {
         deadline(begin,"Lite B"); const auto s=step();
         if (s.lb) { d_.s_axi_bready=0; response(s.lbre,"Lite B"); return; }
     }
 }
-std::uint32_t AxiBurstBfm::axi_read(std::uint32_t addr) {
+std::uint32_t AxiBurstBfm::axi_read(std::uint32_t addr, unsigned response_hold) {
     require_usable(); const auto begin=cycles_;
     d_.s_axi_araddr=addr; d_.s_axi_arvalid=1; d_.s_axi_rready=0;
     while (true) { deadline(begin,"Lite AR"); if (step().lar) break; }
-    d_.s_axi_arvalid=0; d_.s_axi_rready=1;
+    d_.s_axi_arvalid=0;
+    for (unsigned i=0;i<response_hold;++i) {
+        d_.s_axi_rready=0; deadline(begin,"Held Lite R"); step();
+        if (!d_.s_axi_rvalid) throw std::runtime_error("Lite RVALID lost under backpressure");
+    }
+    d_.s_axi_rready=1;
     while (true) {
         deadline(begin,"Lite R"); const auto s=step();
         if (s.lr) { d_.s_axi_rready=0; response(s.lrre,"Lite R"); return s.rdata; }

@@ -1,0 +1,42 @@
+metric,value,unit,source,classification
+git_head,b5077a7537c0929f4b0b97793ff1cfee4671c3cd,commit,manifest.txt,experiment identity
+top,systolic_axi_lite_top,identifier,config.mk,experiment identity
+N,2,parameter,frontend.tcl,experiment identity
+K,17,parameter,frontend.tcl,experiment identity
+DATA_W,8,bits,frontend.tcl,experiment identity
+ACC_W,18,bits,frontend.tcl,experiment identity
+clock_period,2.500,ns,constraint.sdc,assumption
+clock_uncertainty,0.050,ns,constraint.sdc,assumption
+input_delay_max,0.250,ns,constraint.sdc,assumption
+input_delay_min,0.000,ns,constraint.sdc,assumption
+output_delay_max,0.250,ns,constraint.sdc,assumption
+output_delay_min,0.000,ns,constraint.sdc,assumption
+input_transition,0.050,ns,constraint.sdc,assumption
+output_load,0.010,pF,constraint.sdc,assumption
+corner,typical_1.10V_25C,corner,NangateOpenCellLibrary_typical.lib,experiment identity
+interconnect_model,5K_hvratio_1_1,wire-load model,NangateOpenCellLibrary_typical.lib,assumption
+frontend_yosys,0.68+136,version,manifest.txt,experiment identity
+container_yosys,0.68+post,version,fixed image probe,experiment identity
+openroad,26Q3-1305-gf552262465,version,fixed image probe,experiment identity
+opensta,3.1.0,version,openroad_sta.log,experiment identity
+orfs_commit,6101364b2d7909dd797e1e3e7f80695401cfa4e4,commit,manifest.txt,experiment identity
+image_digest,sha256:73bd87efa06758865277f347fbc6b932642d8ab21a5430c5ce5480aaa60c27d0,digest,manifest.txt,experiment identity
+mapped_cell_area,24493.280,um^2,synth_stat.txt,measured
+mapped_cell_count,14823,cells,synth_stat.txt,measured
+sequential_area,3622.122,um^2,synth_stat.txt,measured
+sequential_cell_count,801,cells,synth_stat.txt,measured
+combinational_area,20871.158,um^2,derived from synth_stat.txt,measured
+combinational_cell_count,14022,cells,derived from synth_stat.txt,measured
+buffer_cell_count,860,cells,synth_stat.txt,measured
+inverter_cell_count,1058,cells,synth_stat.txt,measured
+logical_memory_bits,0,bits,synth_stat.txt,measured
+setup_wns,-8.69,ns,openroad_sta.log,measured
+setup_tns,-2351.48,ns,openroad_sta.log,measured
+hold_wns,-0.04,ns,openroad_sta.log,measured
+hold_tns,-0.08,ns,openroad_sta.log,measured
+setup_violating_endpoints,unavailable,endpoints,OpenSTA summary,tool limitation
+hold_violating_endpoints,unavailable,endpoints,OpenSTA summary,tool limitation
+unconstrained_functional_endpoints,0,endpoints,check_setup; rst_n is explicitly false-pathed,measured
+a_b_data_state,544,bits,2*2*17*8,theoretical cross-check
+a_b_written_bitmap,68,bits,2*2*17,theoretical cross-check
+pe_accumulators,72,bits,4*18,theoretical cross-check

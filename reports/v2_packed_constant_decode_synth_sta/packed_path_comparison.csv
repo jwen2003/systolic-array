@@ -1,0 +1,13 @@
+experiment,packed_enable,path_class,startpoint,endpoint,slack_ns,combinational_cells,buffer_inverter_cells
+old_dynamic_index,0,global_worst,u_core.u_controller.cycle_idx[0]$_SDFFE_PN0P_,u_core.u_array.gen_row[0].gen_col[1].u_pe.psum_out[17]$_SDFFE_PN0P_,-0.02,40,7
+old_dynamic_index,0,current_addr_to_matrix,u_burst.current_addr[28]$_SDFFE_PN0P_,u_device.a_matrix[100]$_DFFE_PP_,1.688408,11,1
+old_dynamic_index,0,current_addr_to_bitmap,u_burst.current_addr[7]$_SDFFE_PN0P_,u_device.a_written[3]$_SDFF_PN0_,1.701813,13,3
+old_dynamic_index,1,global_worst,u_burst.state[1]$_SDFFE_PN0P_,u_device.a_matrix[16]$_DFFE_PP_,-11.43,286,57
+old_dynamic_index,1,current_addr_to_matrix,u_burst.current_addr[2]$_SDFFE_PN0P_,u_device.a_matrix[16]$_DFFE_PP_,-11.293473,282,55
+old_dynamic_index,1,current_addr_to_bitmap,u_burst.current_addr[2]$_SDFFE_PN0P_,u_device.a_written[15]$_SDFF_PN0_,-0.438741,43,8
+new_constant_decode,0,global_worst,u_core.u_controller.cycle_idx[1]$_SDFFE_PN0P_,u_core.u_array.gen_row[0].gen_col[0].u_pe.psum_out[17]$_SDFFE_PN0P_,-0.04,41,8
+new_constant_decode,0,current_addr_to_matrix,u_burst.current_addr[28]$_SDFFE_PN0P_,u_device.b_matrix[56]$_DFFE_PP_,1.641921,12,2
+new_constant_decode,0,current_addr_to_bitmap,u_burst.current_addr[28]$_SDFFE_PN0P_,u_device.b_written[19]$_SDFF_PN0_,1.637527,13,3
+new_constant_decode,1,global_worst,u_core.u_controller.cycle_idx[0]$_SDFFE_PN0P_,u_core.u_array.gen_row[1].gen_col[0].u_pe.psum_out[17]$_SDFFE_PN0P_,0.04,41,8
+new_constant_decode,1,current_addr_to_matrix,u_burst.current_addr[6]$_SDFFE_PN0P_,u_device.b_matrix[13]$_DFFE_PP_,1.674469,13,4
+new_constant_decode,1,current_addr_to_bitmap,u_burst.current_addr[6]$_SDFFE_PN0P_,u_device.a_written[8]$_SDFF_PN0_,1.692279,14,4

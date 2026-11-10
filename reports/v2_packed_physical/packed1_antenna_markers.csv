@@ -1,0 +1,3 @@
+marker,category,bbox_um,net,bterms,iterms,ametal_um2,agate_um2,adiodes_um2,ratio,threshold
+1,METAL6_ANTENNA,78.145;96.32;79.125;157.62,s_axi_araddr[4],s_axi_araddr[4],input31/A,8.6996,0.02625,(0),331.413333333,300
+1,METAL6_ANTENNA,78.145;96.32;79.125;157.62,s_axi_arready,s_axi_arready,output195/Z,8.6996,0.02625,(0),331.413333333,300

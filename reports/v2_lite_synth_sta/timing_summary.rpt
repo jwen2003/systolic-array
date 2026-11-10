@@ -1,0 +1,28 @@
+
+Warning: There is 1 input port missing set_input_delay.
+  rst_n
+
+wns max -8.69
+tns max -2351.48
+worst slack max -8.69
+wns min -0.04
+tns min -0.08
+worst slack min -0.04
+
+max capacitance
+
+Pin                                    Limit     Cap   Slack
+------------------------------------------------------------
+_23463_/ZN                             20.90   34.33  -13.43 (VIOLATED)
+
+_23007_/ZN                             16.02   21.51   -5.49 (VIOLATED)
+
+_18334_/ZN                             11.48   15.86   -4.38 (VIOLATED)
+
+_15741_/ZN                             11.48   15.04   -3.56 (VIOLATED)
+
+_23011_/ZN                             16.02   19.38   -3.36 (VIOLATED)
+
+_16885_/ZN                             11.48   14.23   -2.75 (VIOLATED)
+
+_19183_/ZN                             11.48   13.88   -2.40 (VIOLATED)

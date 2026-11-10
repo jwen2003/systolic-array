@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cstdint>
+#include <functional>
+#include <utility>
 
 class Vsystolic_axi_lite_top;
 
@@ -31,9 +33,12 @@ public:
     // Cycle count is monotonic across resets and includes reset cycles.
     void reset();
     void axi_write(std::uint32_t addr, std::uint32_t data,
-                   std::uint8_t strb = 0xF);
-    std::uint32_t axi_read(std::uint32_t addr);
+                   std::uint8_t strb = 0xF, unsigned response_hold = 0);
+    std::uint32_t axi_read(std::uint32_t addr, unsigned response_hold = 0);
     std::uint64_t cycles() const noexcept { return cycles_; }
+    void set_cycle_observer(std::function<void(std::uint64_t)> observer) {
+        observer_ = std::move(observer);
+    }
 
 private:
     Vsystolic_axi_lite_top& dut_;
@@ -41,6 +46,7 @@ private:
     std::uint64_t timeout_cycles_;
     bool initialized_ = false;
     bool timed_out_ = false;
+    std::function<void(std::uint64_t)> observer_;
 
     CycleSample tick();
     void idle_master();

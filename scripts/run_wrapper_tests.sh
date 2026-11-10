@@ -55,4 +55,8 @@ run_test tb_systolic_device \
     "${repo_root}/rtl/wrapper/systolic_device.sv" \
     "${repo_root}/tb/wrapper/unit/tb_systolic_device.sv"
 
+run_test tb_systolic_device_packed_decode \
+    "${repo_root}/rtl/wrapper/systolic_device.sv" \
+    "${repo_root}/tb/wrapper/unit/tb_systolic_device_packed_decode.sv"
+
 echo "Wrapper unit tests passed. Logs: ${repo_root}/build/wrapper/tb_*"

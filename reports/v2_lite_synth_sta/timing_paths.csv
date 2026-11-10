@@ -1,0 +1,51 @@
+group,rank,startpoint,endpoint,data_arrival_ns,required_time_ns,slack_ns,reported_logic_levels
+constraints_max,1,s_axi_araddr[12] (input port clocked by core_clk),u_slave.s_axi_rdata_reg[10]$_SDFFE_PN0P_,11.12,2.43,-8.69,222
+constraints_max,2,s_axi_araddr[12] (input port clocked by core_clk),u_slave.s_axi_rdata_reg[11]$_SDFFE_PN0P_,11.12,2.43,-8.69,222
+constraints_max,3,s_axi_araddr[12] (input port clocked by core_clk),u_slave.s_axi_rdata_reg[12]$_SDFFE_PN0P_,11.12,2.43,-8.69,222
+constraints_max,4,s_axi_araddr[12] (input port clocked by core_clk),u_slave.s_axi_rdata_reg[13]$_SDFFE_PN0P_,11.12,2.43,-8.69,222
+constraints_max,5,s_axi_araddr[12] (input port clocked by core_clk),u_slave.s_axi_rdata_reg[14]$_SDFFE_PN0P_,11.12,2.43,-8.69,222
+constraints_max,6,s_axi_araddr[12] (input port clocked by core_clk),u_slave.s_axi_rdata_reg[8]$_SDFFE_PN0P_,11.12,2.43,-8.69,222
+constraints_max,7,s_axi_araddr[12] (input port clocked by core_clk),u_slave.s_axi_rdata_reg[15]$_SDFFE_PN0P_,11.12,2.43,-8.69,222
+constraints_max,8,s_axi_araddr[12] (input port clocked by core_clk),u_slave.s_axi_rdata_reg[16]$_SDFFE_PN0P_,11.12,2.43,-8.69,222
+constraints_max,9,s_axi_araddr[12] (input port clocked by core_clk),u_slave.s_axi_rdata_reg[30]$_SDFFE_PN0P_,11.09,2.43,-8.67,221
+constraints_max,10,s_axi_araddr[12] (input port clocked by core_clk),u_slave.s_axi_rdata_reg[9]$_SDFFE_PN0P_,11.07,2.42,-8.65,220
+constraints_min,1,s_axi_rready (input port clocked by core_clk),u_slave.s_axi_rvalid$_SDFFE_PN0P_,0.02,0.06,-0.04,1
+constraints_min,2,s_axi_bready (input port clocked by core_clk),u_slave.s_axi_bvalid$_SDFFE_PN0P_,0.02,0.06,-0.04,1
+constraints_min,3,s_axi_araddr[0] (input port clocked by core_clk),u_device.error_status_reg[7]$_SDFF_PN0_,0.06,0.06,0.00,3
+constraints_min,4,s_axi_wstrb[0] (input port clocked by core_clk),u_slave.wstrb_saved_reg[0]$_SDFFE_PN0P_,0.07,0.07,0.01,2
+constraints_min,5,s_axi_awaddr[12] (input port clocked by core_clk),u_slave.awaddr_saved[12]$_SDFFE_PN0P_,0.07,0.07,0.01,2
+constraints_min,6,s_axi_awaddr[30] (input port clocked by core_clk),u_slave.awaddr_saved[30]$_SDFFE_PN0P_,0.07,0.07,0.01,2
+constraints_min,7,s_axi_awaddr[31] (input port clocked by core_clk),u_slave.awaddr_saved[31]$_SDFFE_PN0P_,0.07,0.07,0.01,2
+constraints_min,8,s_axi_awaddr[27] (input port clocked by core_clk),u_slave.awaddr_saved[27]$_SDFFE_PN0P_,0.07,0.07,0.01,2
+constraints_min,9,s_axi_awaddr[18] (input port clocked by core_clk),u_slave.awaddr_saved[18]$_SDFFE_PN0P_,0.07,0.07,0.01,2
+constraints_min,10,s_axi_awaddr[19] (input port clocked by core_clk),u_slave.awaddr_saved[19]$_SDFFE_PN0P_,0.07,0.07,0.01,2
+reg_to_reg_max,1,u_slave.awaddr_saved[5]$_SDFFE_PN0P_,u_device.a_matrix[136]$_DFFE_PP_,10.87,2.42,-8.45,226
+reg_to_reg_max,2,u_slave.awaddr_saved[5]$_SDFFE_PN0P_,u_device.a_matrix[137]$_DFFE_PP_,10.87,2.42,-8.45,226
+reg_to_reg_max,3,u_slave.awaddr_saved[5]$_SDFFE_PN0P_,u_device.a_matrix[138]$_DFFE_PP_,10.87,2.42,-8.45,226
+reg_to_reg_max,4,u_slave.awaddr_saved[5]$_SDFFE_PN0P_,u_device.a_matrix[139]$_DFFE_PP_,10.87,2.42,-8.45,226
+reg_to_reg_max,5,u_slave.awaddr_saved[5]$_SDFFE_PN0P_,u_device.a_matrix[140]$_DFFE_PP_,10.87,2.42,-8.45,226
+reg_to_reg_max,6,u_slave.awaddr_saved[5]$_SDFFE_PN0P_,u_device.a_matrix[141]$_DFFE_PP_,10.87,2.42,-8.45,226
+reg_to_reg_max,7,u_slave.awaddr_saved[5]$_SDFFE_PN0P_,u_device.a_matrix[142]$_DFFE_PP_,10.87,2.42,-8.45,226
+reg_to_reg_max,8,u_slave.awaddr_saved[5]$_SDFFE_PN0P_,u_device.a_matrix[143]$_DFFE_PP_,10.87,2.42,-8.45,226
+reg_to_reg_max,9,u_slave.awaddr_saved[5]$_SDFFE_PN0P_,u_device.a_matrix[168]$_DFFE_PP_,10.87,2.42,-8.45,226
+reg_to_reg_max,10,u_slave.awaddr_saved[5]$_SDFFE_PN0P_,u_device.a_matrix[169]$_DFFE_PP_,10.87,2.42,-8.45,226
+input_to_reg_max,1,s_axi_araddr[12] (input port clocked by core_clk),u_slave.s_axi_rdata_reg[10]$_SDFFE_PN0P_,11.12,2.43,-8.69,222
+input_to_reg_max,2,s_axi_araddr[12] (input port clocked by core_clk),u_slave.s_axi_rdata_reg[11]$_SDFFE_PN0P_,11.12,2.43,-8.69,222
+input_to_reg_max,3,s_axi_araddr[12] (input port clocked by core_clk),u_slave.s_axi_rdata_reg[12]$_SDFFE_PN0P_,11.12,2.43,-8.69,222
+input_to_reg_max,4,s_axi_araddr[12] (input port clocked by core_clk),u_slave.s_axi_rdata_reg[13]$_SDFFE_PN0P_,11.12,2.43,-8.69,222
+input_to_reg_max,5,s_axi_araddr[12] (input port clocked by core_clk),u_slave.s_axi_rdata_reg[14]$_SDFFE_PN0P_,11.12,2.43,-8.69,222
+input_to_reg_max,6,s_axi_araddr[12] (input port clocked by core_clk),u_slave.s_axi_rdata_reg[8]$_SDFFE_PN0P_,11.12,2.43,-8.69,222
+input_to_reg_max,7,s_axi_araddr[12] (input port clocked by core_clk),u_slave.s_axi_rdata_reg[15]$_SDFFE_PN0P_,11.12,2.43,-8.69,222
+input_to_reg_max,8,s_axi_araddr[12] (input port clocked by core_clk),u_slave.s_axi_rdata_reg[16]$_SDFFE_PN0P_,11.12,2.43,-8.69,222
+input_to_reg_max,9,s_axi_araddr[12] (input port clocked by core_clk),u_slave.s_axi_rdata_reg[30]$_SDFFE_PN0P_,11.09,2.43,-8.67,221
+input_to_reg_max,10,s_axi_araddr[12] (input port clocked by core_clk),u_slave.s_axi_rdata_reg[9]$_SDFFE_PN0P_,11.07,2.42,-8.65,220
+reg_to_output_max,1,u_slave.s_axi_rdata_reg[30]$_SDFFE_PN0P_,s_axi_rdata[17] (output port clocked by core_clk),0.18,2.20,2.02,2
+reg_to_output_max,2,u_slave.s_axi_rdata_reg[30]$_SDFFE_PN0P_,s_axi_rdata[18] (output port clocked by core_clk),0.18,2.20,2.02,2
+reg_to_output_max,3,u_slave.s_axi_rdata_reg[30]$_SDFFE_PN0P_,s_axi_rdata[19] (output port clocked by core_clk),0.18,2.20,2.02,2
+reg_to_output_max,4,u_slave.s_axi_rdata_reg[30]$_SDFFE_PN0P_,s_axi_rdata[20] (output port clocked by core_clk),0.18,2.20,2.02,2
+reg_to_output_max,5,u_slave.s_axi_rdata_reg[30]$_SDFFE_PN0P_,s_axi_rdata[21] (output port clocked by core_clk),0.18,2.20,2.02,2
+reg_to_output_max,6,u_slave.s_axi_rdata_reg[30]$_SDFFE_PN0P_,s_axi_rdata[22] (output port clocked by core_clk),0.18,2.20,2.02,2
+reg_to_output_max,7,u_slave.s_axi_rdata_reg[30]$_SDFFE_PN0P_,s_axi_rdata[23] (output port clocked by core_clk),0.18,2.20,2.02,2
+reg_to_output_max,8,u_slave.s_axi_rdata_reg[30]$_SDFFE_PN0P_,s_axi_rdata[24] (output port clocked by core_clk),0.18,2.20,2.02,2
+reg_to_output_max,9,u_slave.s_axi_rdata_reg[30]$_SDFFE_PN0P_,s_axi_rdata[25] (output port clocked by core_clk),0.18,2.20,2.02,2
+reg_to_output_max,10,u_slave.s_axi_rdata_reg[30]$_SDFFE_PN0P_,s_axi_rdata[26] (output port clocked by core_clk),0.18,2.20,2.02,2

@@ -1,5 +1,7 @@
 #pragma once
 #include <cstdint>
+#include <functional>
+#include <utility>
 #include <vector>
 
 class Vsystolic_axi_burst_top;
@@ -29,15 +31,20 @@ public:
     void reset();
     std::uint64_t cycles() const { return cycles_; }
     BurstSample step();
-    void axi_write(std::uint32_t addr, std::uint32_t data, std::uint8_t strb=1);
-    std::uint32_t axi_read(std::uint32_t addr);
+    void axi_write(std::uint32_t addr, std::uint32_t data, std::uint8_t strb=1,
+                   unsigned response_hold=0);
+    std::uint32_t axi_read(std::uint32_t addr, unsigned response_hold=0);
     BurstMetrics burst_write(std::uint32_t addr, const std::vector<std::uint32_t>& words,
                              unsigned master_gap=0, unsigned response_hold=0,
                              const std::vector<std::uint8_t>& strobes={});
+    void set_cycle_observer(std::function<void(std::uint64_t)> observer) {
+        observer_ = std::move(observer);
+    }
 private:
     Vsystolic_axi_burst_top& d_;
     std::uint64_t cycles_=0, timeout_;
     bool usable_=false;
+    std::function<void(std::uint64_t)> observer_;
     void require_usable() const;
     void deadline(std::uint64_t begin, const char* phase);
     static void response(std::uint8_t value, const char* channel);

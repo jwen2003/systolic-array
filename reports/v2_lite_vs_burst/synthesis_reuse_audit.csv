@@ -1,0 +1,12 @@
+item,lite,burst,result
+git_head,b5077a7537c0929f4b0b97793ff1cfee4671c3cd,b5077a7537c0929f4b0b97793ff1cfee4671c3cd,match
+N_K_DATA_W_ACC_W,2_17_8_18,2_17_8_18,match
+PACKED_ENABLE,not_applicable,0,expected
+source_hash_mismatches,0,0,match
+frontend_yosys,0.68+136,0.68+136,match
+orfs_commit,6101364b2d7909dd797e1e3e7f80695401cfa4e4,6101364b2d7909dd797e1e3e7f80695401cfa4e4,match
+image_digest,sha256:73bd87efa06758865277f347fbc6b932642d8ab21a5430c5ce5480aaa60c27d0,sha256:73bd87efa06758865277f347fbc6b932642d8ab21a5430c5ce5480aaa60c27d0,match
+clock_period_ns,2.500,2.500,match
+corner,typical_1.10V_25C,typical_1.10V_25C,match
+wire_load,5K_hvratio_1_1,5K_hvratio_1_1,match
+runtime_burst_length,not_synthesis_input,not_synthesis_input,reuse_one_burst_netlist

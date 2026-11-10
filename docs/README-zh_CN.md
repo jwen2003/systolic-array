@@ -2,7 +2,7 @@
 
 [English](README.md) | [简体中文](README-zh_CN.md)
 
-入口：[仓库当前状态摘要](../README-zh_CN.md)。当前系统先读 11→12→13→14→16→17，再读 15 的验证边界；复习 Core 读 01→02→03；物理证据读 05→06→07→08→09。10 保留 V1 上游抽象，不是当前 Runtime 的完整功能清单。
+入口：[仓库当前状态摘要](../README-zh_CN.md)。当前系统先读 11→12→13→14→16→17，再读 19 的综合实测结果和 15 的验证边界；复习 Core 读 01→02→03；V1 物理证据读 05→06→07→08→09。10 保留 V1 上游抽象，不是当前 Runtime 的完整功能清单。
 
 | 目录 | 职责 |
 |---|---|
@@ -13,7 +13,7 @@
 | performance/ | 假设、模型、RTL 实测与 co-design |
 | implementation/ | generic synthesis、STA、物理实现与局限 |
 
-中英文放在同一主题目录，以 -EN.md / -zh_CN.md 配对，不额外分语言树。保留原 01–10 编号，新增 11–18。
+中英文放在同一主题目录，以 -EN.md / -zh_CN.md 配对，不额外分语言树。保留原 01–10 编号，新增 11–19。
 
 | 编号 | 文档 |
 |---|---|
@@ -35,3 +35,4 @@
 | 16 | [Burst 模型与实测](performance/16_burst_analysis-zh_CN.md) |
 | 17 | [打包实验](performance/17_packed_analysis-zh_CN.md) |
 | 18 | [Co-design 路线](performance/18_codesign_roadmap-zh_CN.md) |
+| 19 | [V2 Burst、packed 与物理结果](performance/19_v2_axi_burst_packed_results-zh_CN.md) |

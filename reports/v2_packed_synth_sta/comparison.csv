@@ -1,0 +1,3 @@
+packed_enable,mapped_area_um2,mapped_cells,sequential_area_um2,combinational_area_um2,sequential_cells,combinational_cells,buffer_cells,inverter_cells,setup_wns_ns,setup_tns_ns,hold_wns_ns,hold_tns_ns,max_slew_violations,max_capacitance_violations,max_fanout_violations,worst_startpoint,worst_endpoint
+0,11545.730,5553,3839.178,7706.552,849,4704,391,160,-0.015262,-0.015262,-0.037323,-0.220520,0,4,0,u_core.u_controller.cycle_idx[0]$_SDFFE_PN0P_,u_core.u_array.gen_row[0].gen_col[1].u_pe.psum_out[17]$_SDFFE_PN0P_
+1,47206.488,32701,3961.272,43245.216,876,31825,2118,2510,-11.434590,-3259.177979,-0.037323,-0.172229,1,15,0,u_burst.state[1]$_SDFFE_PN0P_,u_device.a_matrix[16]$_DFFE_PP_

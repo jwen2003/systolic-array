@@ -1,0 +1,5 @@
+run,item,category,max_ratio,actual_ratio,metal_area_um2,gate_area_um2,diode_count
+baseline_2p5ns,1,METAL6_ANTENNA,300,305.386666667,8.0164,0.02625,0
+baseline_2p5ns,2,METAL6_ANTENNA,300,324.8,8.5260,0.02625,0
+cap_margin_10_2p5ns,1,METAL6_ANTENNA,300,305.386666667,8.0164,0.02625,0
+cap_margin_10_2p5ns,2,METAL6_ANTENNA,300,309.866666667,8.1340,0.02625,0

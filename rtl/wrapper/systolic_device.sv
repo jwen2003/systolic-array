@@ -69,11 +69,21 @@ module systolic_device #(
     localparam logic [31:0] PA_BASE = 32'h4000;
     localparam logic [31:0] PB_BASE = 32'h5000;
     localparam logic [31:0] PACKED_BYTES = 4*((INPUT_WORDS+3)/4);
+    localparam int unsigned PACKED_TAIL_LANES = INPUT_WORDS % 4;
+    localparam logic [3:0] PACKED_TAIL_INVALID_MASK =
+        PACKED_TAIL_LANES == 0 ? 4'b0000 : (4'b1111 << PACKED_TAIL_LANES);
+    localparam logic [31:0] PACKED_LAST_WORD_OFFSET = 4*(INPUT_WORDS/4);
     logic packed_a, packed_b;
-    int unsigned packed_index;
+    logic packed_tail_invalid;
+    logic a_packed_hit [N-1:0][K-1:0];
+    logic b_packed_hit [K-1:0][N-1:0];
+    logic signed [DATA_W-1:0] a_packed_data [N-1:0][K-1:0];
+    logic signed [DATA_W-1:0] b_packed_data [K-1:0][N-1:0];
     assign packed_a = PACKED_ENABLE && wr_addr >= PA_BASE && wr_addr < PA_BASE+PACKED_BYTES;
     assign packed_b = PACKED_ENABLE && wr_addr >= PB_BASE && wr_addr < PB_BASE+PACKED_BYTES;
-    assign packed_index = packed_a ? wr_addr-PA_BASE : wr_addr-PB_BASE;
+    assign packed_tail_invalid = |(wr_strb & PACKED_TAIL_INVALID_MASK)
+                               && ((packed_a && wr_addr == PA_BASE+PACKED_LAST_WORD_OFFSET)
+                                || (packed_b && wr_addr == PB_BASE+PACKED_LAST_WORD_OFFSET));
     localparam logic [31:0] ERROR_MASK = 32'hff;
 
     typedef enum logic [1:0] {LOAD, RUN, DONE} state_t;
@@ -83,7 +93,7 @@ module systolic_device #(
     logic [31:0] error_status, wr_error_bits, rd_error_bits;
     logic [31:0] new_errors, clear_mask, byte_mask;
     logic start_accept, ack_accept;
-    int unsigned wr_index, rd_index;
+    logic [31:0] a_read_data, b_read_data, c_read_data;
 
     initial begin
         if (N == 0 || K == 0 || INPUT_WORDS > 1024 || RESULT_WORDS > 1024)
@@ -91,6 +101,34 @@ module systolic_device #(
         if (DATA_W != 8 || ACC_W != 18)
             $fatal(1, "This device contract supports INT8 inputs / INT18 results");
     end
+
+    // Each packed element has one constant full-address comparator and one
+    // constant byte lane. The generated coordinates remove runtime quotient,
+    // remainder, and dynamic matrix indexing while preserving parallel lanes.
+    generate
+        for (genvar row = 0; row < N; row++) begin : gen_a_packed_row
+            for (genvar inner = 0; inner < K; inner++) begin : gen_a_packed_inner
+                localparam int unsigned P = row*K + inner;
+                localparam int unsigned LANE = P % 4;
+                localparam logic [31:0] WORD_ADDR = PA_BASE + 4*(P/4);
+                assign a_packed_hit[row][inner] = packed_a
+                                                  && wr_addr == WORD_ADDR
+                                                  && wr_strb[LANE];
+                assign a_packed_data[row][inner] = $signed(wr_data[8*LANE +: DATA_W]);
+            end
+        end
+        for (genvar inner = 0; inner < K; inner++) begin : gen_b_packed_inner
+            for (genvar col = 0; col < N; col++) begin : gen_b_packed_col
+                localparam int unsigned P = inner*N + col;
+                localparam int unsigned LANE = P % 4;
+                localparam logic [31:0] WORD_ADDR = PB_BASE + 4*(P/4);
+                assign b_packed_hit[inner][col] = packed_b
+                                                  && wr_addr == WORD_ADDR
+                                                  && wr_strb[LANE];
+                assign b_packed_data[inner][col] = $signed(wr_data[8*LANE +: DATA_W]);
+            end
+        end
+    endgenerate
 
     assign inputs_ready = (&a_written) && (&b_written);
     assign wr_error = |wr_error_bits;
@@ -106,22 +144,52 @@ module systolic_device #(
     assign ack_accept = wr_en && !wr_error && wr_addr == 32'h000c
                      && wr_strb[0] && wr_data[0] && state == DONE;
 
+    // Constant-address one-hot terms keep matrix coordinates fixed at
+    // elaboration. Full 32-bit comparisons prevent high-address aliasing.
+    // Bitwise OR reduction expresses parallel selection rather than a
+    // procedural priority chain; only one aligned matrix address can match.
+    always_comb begin
+        a_read_data = '0;
+        b_read_data = '0;
+        c_read_data = '0;
+        for (int unsigned row = 0; row < N; row++) begin
+            for (int unsigned inner = 0; inner < K; inner++) begin
+                a_read_data |= {32{rd_addr == A_BASE + 4*(row*K + inner)}}
+                             & (a_written[row*K + inner]
+                                ? {{(32-DATA_W){a_matrix[row][inner][DATA_W-1]}},
+                                   a_matrix[row][inner]}
+                                : 32'b0);
+            end
+        end
+        for (int unsigned inner = 0; inner < K; inner++) begin
+            for (int unsigned col = 0; col < N; col++) begin
+                b_read_data |= {32{rd_addr == B_BASE + 4*(inner*N + col)}}
+                             & (b_written[inner*N + col]
+                                ? {{(32-DATA_W){b_matrix[inner][col][DATA_W-1]}},
+                                   b_matrix[inner][col]}
+                                : 32'b0);
+            end
+        end
+        for (int unsigned row = 0; row < N; row++) begin
+            for (int unsigned col = 0; col < N; col++) begin
+                c_read_data |= {32{rd_addr == C_BASE + 4*(row*N + col)}}
+                             & {{(32-ACC_W){core_result[row][col][ACC_W-1]}},
+                                core_result[row][col]};
+            end
+        end
+    end
+
     // Decode write permissions independently of wr_en; log only an actual attempt.
     always_comb begin
         wr_error_bits = '0;
-        wr_index = 0;
         if (wr_addr[1:0] != 2'b00) begin
             wr_error_bits[5] = 1'b1;
         end else if (packed_a || packed_b) begin
             if (state != LOAD) wr_error_bits[3] = 1'b1;
-            else for (int unsigned lane=0; lane<4; lane++)
-                if (wr_strb[lane] && packed_index+lane >= INPUT_WORDS)
-                    wr_error_bits[2] = 1'b1;
+            else if (packed_tail_invalid) wr_error_bits[2] = 1'b1;
         end else if (wr_addr >= A_BASE && wr_addr < A_END) begin
-            wr_index = (wr_addr - A_BASE) >> 2;
             if (state != LOAD) wr_error_bits[3] = 1'b1;
         end else if (wr_addr >= B_BASE && wr_addr < B_END) begin
-            wr_index = (wr_addr - B_BASE) >> 2;
             if (state != LOAD) wr_error_bits[3] = 1'b1;
         end else if (wr_addr >= C_BASE && wr_addr < C_END) begin
             wr_error_bits[6] = 1'b1;
@@ -147,26 +215,17 @@ module systolic_device #(
     always_comb begin
         rd_data = '0;
         rd_error_bits = '0;
-        rd_index = 0;
         if (rd_addr[1:0] != 2'b00) begin
             rd_error_bits[5] = 1'b1;
         end else if (rd_addr >= A_BASE && rd_addr < A_END) begin
-            rd_index = (rd_addr - A_BASE) >> 2;
             if (state != LOAD) rd_error_bits[7] = 1'b1;
-            else if (a_written[rd_index])
-                rd_data = {{(32-DATA_W){a_matrix[rd_index/K][rd_index%K][DATA_W-1]}},
-                           a_matrix[rd_index/K][rd_index%K]};
+            else rd_data = a_read_data;
         end else if (rd_addr >= B_BASE && rd_addr < B_END) begin
-            rd_index = (rd_addr - B_BASE) >> 2;
             if (state != LOAD) rd_error_bits[7] = 1'b1;
-            else if (b_written[rd_index])
-                rd_data = {{(32-DATA_W){b_matrix[rd_index/N][rd_index%N][DATA_W-1]}},
-                           b_matrix[rd_index/N][rd_index%N]};
+            else rd_data = b_read_data;
         end else if (rd_addr >= C_BASE && rd_addr < C_END) begin
-            rd_index = (rd_addr - C_BASE) >> 2;
             if (state != DONE) rd_error_bits[4] = 1'b1;
-            else rd_data = {{(32-ACC_W){core_result[rd_index/N][rd_index%N][ACC_W-1]}},
-                            core_result[rd_index/N][rd_index%N]};
+            else rd_data = c_read_data;
         end else begin
             case (rd_addr)
                 32'h0000: rd_data = 32'h0000_0200;
@@ -212,26 +271,38 @@ module systolic_device #(
             endcase
 
             if (wr_en && !wr_error && (packed_a || packed_b)) begin
-                for (int unsigned lane=0; lane<4; lane++) begin
-                    if (wr_strb[lane] && packed_index+lane < INPUT_WORDS) begin
-                        if (packed_a) begin
-                            a_matrix[(packed_index+lane)/K][(packed_index+lane)%K]
-                                <= $signed(wr_data[8*lane +: 8]);
-                            a_written[packed_index+lane] <= 1'b1;
-                        end else begin
-                            b_matrix[(packed_index+lane)/N][(packed_index+lane)%N]
-                                <= $signed(wr_data[8*lane +: 8]);
-                            b_written[packed_index+lane] <= 1'b1;
+                for (int unsigned row = 0; row < N; row++) begin
+                    for (int unsigned inner = 0; inner < K; inner++) begin
+                        if (a_packed_hit[row][inner]) begin
+                            a_matrix[row][inner] <= a_packed_data[row][inner];
+                            a_written[row*K + inner] <= 1'b1;
+                        end
+                    end
+                end
+                for (int unsigned inner = 0; inner < K; inner++) begin
+                    for (int unsigned col = 0; col < N; col++) begin
+                        if (b_packed_hit[inner][col]) begin
+                            b_matrix[inner][col] <= b_packed_data[inner][col];
+                            b_written[inner*N + col] <= 1'b1;
                         end
                     end
                 end
             end else if (wr_en && !wr_error && wr_strb[0]) begin
-                if (wr_addr >= A_BASE && wr_addr < A_END) begin
-                    a_matrix[wr_index/K][wr_index%K] <= $signed(wr_data[DATA_W-1:0]);
-                    a_written[wr_index] <= 1'b1;
-                end else if (wr_addr >= B_BASE && wr_addr < B_END) begin
-                    b_matrix[wr_index/N][wr_index%N] <= $signed(wr_data[DATA_W-1:0]);
-                    b_written[wr_index] <= 1'b1;
+                for (int unsigned row = 0; row < N; row++) begin
+                    for (int unsigned inner = 0; inner < K; inner++) begin
+                        if (wr_addr == A_BASE + 4*(row*K + inner)) begin
+                            a_matrix[row][inner] <= $signed(wr_data[DATA_W-1:0]);
+                            a_written[row*K + inner] <= 1'b1;
+                        end
+                    end
+                end
+                for (int unsigned inner = 0; inner < K; inner++) begin
+                    for (int unsigned col = 0; col < N; col++) begin
+                        if (wr_addr == B_BASE + 4*(inner*N + col)) begin
+                            b_matrix[inner][col] <= $signed(wr_data[DATA_W-1:0]);
+                            b_written[inner*N + col] <= 1'b1;
+                        end
+                    end
                 end
             end
         end
