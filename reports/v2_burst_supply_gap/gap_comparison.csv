@@ -1,0 +1,5 @@
+supply_gap,l1_pure_write,l16_pure_write,absolute_savings,speedup,l1_end_to_end,l16_end_to_end,end_to_end_savings,end_to_end_speedup
+0,204,80,124,2.55,239,115,124,2.07826
+1,204,136,68,1.5,239,171,68,1.39766
+3,270,270,0,1,305,305,0,1
+7,538,538,0,1,573,573,0,1

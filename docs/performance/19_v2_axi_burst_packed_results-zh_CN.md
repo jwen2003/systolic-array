@@ -117,7 +117,28 @@ packed1 默认 run 有一个 KLayout `METAL6_ANTENNA` item：`s_axi_araddr[4]` �
 
 两组 C 的四个元素均通过独立 signed matmul golden，并直接比较两组结果。所有事务返回 `OKAY`。旧 packed 回归的 62 拍从两拍 preflight status read 之前计时并包含 ACK；去掉 preflight 后与本次 60 拍 repeat-task 口径一致。详见 [`reports/v2_packed_performance/`](../../reports/v2_packed_performance/)。
 
-## 8. 验证与证明边界
+## 8. 输入供给间隔实验
+
+本实验在同一个 `systolic_axi_burst_top` 上固定 `N=2`、`K=17`、`PACKED_ENABLE=0`、单 outstanding，并比较 L1 与 L16。L1 每个元素使用一笔事务；L16 对 A、B 各按 16+16+2 beats 分组。两者使用相同矩阵、READY/START/DONE 轮询、C 读回与 ACK 流程。
+
+$g$ 表示上游连续两个元素就绪之间的空拍数。A 后接 B 的 68 个元素共用一条独立于 AXI 握手的绝对就绪时间表：元素 $i$ 从 $t_0+i(g+1)$ 起可用，并持续保持到 W 握手。AW 可以在整笔数据齐备前发出；本实验没有把间隔实现成 W 握手后的固定 sleep。
+
+| $g$ | L1/L16 事务 | L1/L16 W beats | 预测纯写入 | 实测纯写入 | L1/L16 端到端 | L16 绝对节省 | 端到端加速 |
+|---:|---:|---:|---:|---:|---:|---:|---:|
+| 0 | 68 / 6 | 68 / 68 | 204 / 80 | 204 / 80 | 239 / 115 | 124 | 2.0783× |
+| 1 | 68 / 6 | 68 / 68 | 204 / 136 | 204 / 136 | 239 / 171 | 68 | 1.3977× |
+| 3 | 68 / 6 | 68 / 68 | 270 / 270 | 270 / 270 | 305 / 305 | 0 | 1.0000× |
+| 7 | 68 / 6 | 68 / 68 | 538 / 538 | 538 / 538 | 573 / 573 | 0 | 1.0000× |
+
+8/8 配置均通过独立 golden model，模型预测与实测逐项一致。g=3 和 g=7 时，L16 仍比 L1 少发 62 笔事务，但事务切换开销被等待输入的时间完全覆盖，因此纯写入和端到端周期相同。这里观察到的是绝对节省由 124 降至 68 再降至 0，而不是绝对节省不变、仅加速比下降。
+
+该结论只覆盖已测的 g=0、1、3、7 以及当前 BFM 的单 outstanding、AW 可提前发出和立即响应 READY 调度；g=2 未测，不能据此断言所有供给间隔的转折点。逐元素就绪/W 握手、逐事务 AW/末 W/B 事件及模型位于 [`reports/v2_burst_supply_gap/`](../../reports/v2_burst_supply_gap/)。复现命令为：
+
+```bash
+bash scripts/run_v2_burst_supply_gap.sh
+```
+
+## 9. 验证与证明边界
 
 - 功能回归证明已执行激励下的协议、地址、bitmap、副作用与矩阵结果：包括跨行 packed word、单/多 lane、尾拍 partial/zero/illegal strobe、高位地址别名、ACK/reload、固定 seed backpressure 及独立 golden。它不是形式等价证明。
 - Source-to-derived frontend equivalence 证明各自源 RTL 与各自派生 Verilog：Lite 4,023/4,023；unpacked Burst 4,401/4,401；packed0 4,614/4,614；packed1 5,173/5,173。它不证明 old/new RTL 互相等价，也不证明映射后或布线后等价。
@@ -125,7 +146,7 @@ packed1 默认 run 有一个 KLayout `METAL6_ANTENNA` item：`s_axi_araddr[4]` �
 - Kepler stage LEC 仍因 CPU SIGILL 关闭；post-route formal equivalence 和 LVS 尚未验证。
 - 所有 PPA 数字仅适用于 Nangate45 typical 单 corner、给定参数和 active-operation 约束。没有可信功耗、multi-corner signoff 或真实 CPU/DDR/PCIe 性能结论。
 
-## 9. 复现入口
+## 10. 复现入口
 
 以下命令从仓库根目录执行；物理流程需要已记录的 `ORFS_ROOT` 与 `OSS_CAD_SUITE_ROOT` 环境。
 
@@ -140,6 +161,7 @@ PACKED_ENABLE=0 OPENROAD_THREADS=16 bash scripts/run_v2_packed_physical.sh
 PACKED_ENABLE=1 PHYSICAL_RUN=antenna_input_buffer_fix OPENROAD_THREADS=16 bash scripts/run_v2_packed_physical.sh
 python3 scripts/summarize_v2_packed_physical.py
 bash scripts/run_v2_packed_performance.sh
+bash scripts/run_v2_burst_supply_gap.sh
 ```
 
-本章止于 V2 接口装载、功能验证、综合/STA、物理实现和受控 RTL 周期测量。Packed 不等于 DMA。当前后续顺序为 sticky DONE 轮询间隔、双缓冲和 DMA，之后才进入 OS vs. WS；真实软件/内存系统、功耗、LVS 与 post-route formal 仍属于后续独立工作。
+本章止于 V2 接口装载、功能验证、综合/STA、物理实现和受控 RTL 周期测量。输入供给间隔实验已完成；Packed 不等于 DMA。当前下一项是 sticky DONE 轮询间隔，之后依次为双缓冲和 DMA，再进入 OS vs. WS；真实软件/内存系统、功耗、LVS 与 post-route formal 仍属于后续独立工作。

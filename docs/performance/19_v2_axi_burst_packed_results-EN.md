@@ -117,7 +117,28 @@ End-to-end time falls from 115 to 57 cycles, a measured $115/57=2.0175\times$ sp
 
 All four C elements in both modes pass an independent signed matmul golden model, and the two result vectors are compared directly. Every transaction returns `OKAY`. The old packed regression's 62-cycle total begins before a two-cycle preflight status read and includes ACK; removing that preflight aligns it with the current 60-cycle repeat-task boundary. Evidence: [`reports/v2_packed_performance/`](../../reports/v2_packed_performance/).
 
-## 8. Verification and Proof Boundaries
+## 8. Input-Supply-Gap Experiment
+
+This experiment fixes `N=2`, `K=17`, `PACKED_ENABLE=0`, and one outstanding transaction on the same `systolic_axi_burst_top`, comparing L1 against L16. L1 uses one transaction per element; L16 splits each of A and B into 16+16+2 beats. Both use identical matrices and the same READY/START/DONE-poll/C-read/ACK flow.
+
+$g$ is the number of idle cycles between consecutive upstream element arrivals. The 68 A-then-B elements share one absolute readiness schedule independent of AXI handshakes: element $i$ becomes available at $t_0+i(g+1)$ and remains available until its W handshake. AW may be issued before all data in a transaction are ready; the implementation does not insert a fixed sleep after W handshakes.
+
+| $g$ | L1/L16 transactions | L1/L16 W beats | Predicted pure writes | Measured pure writes | L1/L16 end-to-end | Absolute L16 savings | End-to-end speedup |
+|---:|---:|---:|---:|---:|---:|---:|---:|
+| 0 | 68 / 6 | 68 / 68 | 204 / 80 | 204 / 80 | 239 / 115 | 124 | 2.0783× |
+| 1 | 68 / 6 | 68 / 68 | 204 / 136 | 204 / 136 | 239 / 171 | 68 | 1.3977× |
+| 3 | 68 / 6 | 68 / 68 | 270 / 270 | 270 / 270 | 305 / 305 | 0 | 1.0000× |
+| 7 | 68 / 6 | 68 / 68 | 538 / 538 | 538 / 538 | 573 / 573 | 0 | 1.0000× |
+
+All 8/8 configurations pass the independent golden model, and every model prediction matches measurement. At g=3 and g=7, L16 still issues 62 fewer transactions than L1, but input waiting fully hides transaction-switching overhead, so pure-write and end-to-end cycles are equal. The observed effect is a reduction in absolute savings from 124 to 68 to zero, not constant absolute savings with only a lower speedup ratio.
+
+This conclusion covers only g=0, 1, 3, and 7 with the current BFM's one-outstanding, early-AW, immediate-response-READY policy. g=2 was not tested, so these results do not establish a universal crossover point. Per-element readiness/W handshakes, per-transaction AW/last-W/B events, and the model are in [`reports/v2_burst_supply_gap/`](../../reports/v2_burst_supply_gap/). Reproduce with:
+
+```bash
+bash scripts/run_v2_burst_supply_gap.sh
+```
+
+## 9. Verification and Proof Boundaries
 
 - Functional regression establishes protocol, address, bitmap, side-effect, and matrix-result behavior for the executed stimuli, including a cross-row packed word, single/multiple lanes, partial/zero/illegal tail strobes, high-address aliases, ACK/reload, fixed-seed backpressure, and an independent golden model. It is not a formal equivalence proof.
 - Source-to-derived frontend equivalence proves each source RTL against its own derived Verilog: Lite 4,023/4,023; unpacked Burst 4,401/4,401; packed0 4,614/4,614; packed1 5,173/5,173. It does not prove old RTL against new RTL, mapped equivalence, or post-route equivalence.
@@ -125,7 +146,7 @@ All four C elements in both modes pass an independent signed matmul golden model
 - Kepler stage LEC remains disabled because of CPU SIGILL. Post-route formal equivalence and LVS are not proven.
 - All PPA numbers apply only to Nangate45 typical, the stated parameters, and active-operation constraints. There is no trustworthy power, multi-corner signoff, or real CPU/DDR/PCIe performance conclusion.
 
-## 9. Reproduction
+## 10. Reproduction
 
 Run these commands from the repository root. Physical flows require the recorded `ORFS_ROOT` and `OSS_CAD_SUITE_ROOT` environments.
 
@@ -140,6 +161,7 @@ PACKED_ENABLE=0 OPENROAD_THREADS=16 bash scripts/run_v2_packed_physical.sh
 PACKED_ENABLE=1 PHYSICAL_RUN=antenna_input_buffer_fix OPENROAD_THREADS=16 bash scripts/run_v2_packed_physical.sh
 python3 scripts/summarize_v2_packed_physical.py
 bash scripts/run_v2_packed_performance.sh
+bash scripts/run_v2_burst_supply_gap.sh
 ```
 
-This chapter stops at V2 interface loading, functional verification, synthesis/STA, physical implementation, and controlled RTL cycle measurement. Packed is not DMA. The current follow-up order is sticky-DONE polling intervals, double buffering, and DMA, followed by OS versus WS. Real software/memory systems, power, LVS, and post-route formal remain separate future work.
+This chapter stops at V2 interface loading, functional verification, synthesis/STA, physical implementation, and controlled RTL cycle measurement. The input-supply-gap experiment is complete; packed is not DMA. Sticky-DONE polling intervals are next, followed by double buffering and DMA, then OS versus WS. Real software/memory systems, power, LVS, and post-route formal remain separate future work.

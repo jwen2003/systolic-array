@@ -5,9 +5,9 @@
 
 ## 1. 当前决策
 
-[已建立事实] Lite→Burst→并行 packing 已完成受控周期、综合与物理反馈。按统一 packed/unpacked 计时口径，N2/K17 端到端周期为 115→57；旧 packed 回归的 62 拍包含两拍 preflight 和 ACK。当前 packed1 在 Nangate45 typical、2.500 ns 单 corner 下完成已执行的物理检查，但尚无完整 Pareto Frontier。
+[已建立事实] Lite→Burst→并行 packing 已完成受控周期、综合与物理反馈。按统一 packed/unpacked 计时口径，N2/K17 端到端周期为 115→57；旧 packed 回归的 62 拍包含两拍 preflight 和 ACK。输入供给间隔实验也已完成：在已测 g=3/7 时，等待数据完全覆盖 L1/L16 的事务开销差异。当前 packed1 在 Nangate45 typical、2.500 ns 单 corner 下完成已执行的物理检查，但尚无完整 Pareto Frontier。
 
-当前阶段依次评估 sticky DONE 轮询间隔、双缓冲与 DMA。完成这些接口/调度实验并冻结共同 workload 与计数口径后，才进入独立的 OS vs. WS 数据流比较。并行 packing 是已实现候选，但尚不是所有场景的最终赢家。
+输入供给间隔实验已完成；当前下一项为 sticky DONE 轮询间隔，之后依次评估双缓冲与 DMA。完成这些接口/调度实验并冻结共同 workload 与计数口径后，才进入独立的 OS vs. WS 数据流比较。并行 packing 是已实现候选，但尚不是所有场景的最终赢家。
 
 ## 2. 公平比较与 Pareto
 

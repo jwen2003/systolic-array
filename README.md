@@ -23,6 +23,8 @@ Responsibilities/ownership: [11](docs/wrapper/11_system_architecture-EN.md); AXI
 
 For N2/K17, unpacked Burst maximum lengths 1/2/4/8/16 measure 239/171/139/123/115 end-to-end cycles. Their pure A/B write costs are 204/136/104/88/80 cycles and follow `W beats + 2 × A/B write transactions` under the current continuously supplied BFM.
 
+The input-supply-gap experiment further measures L1/L16 end-to-end cycles of 239/115, 239/171, 305/305, and 573/573 for 0/1/3/7 idle cycles between successive element arrivals. At the tested g=3 and g=7 points, data waiting fully hides transaction-switching overhead. This conclusion is limited to the current single-outstanding BFM schedule; g=2 was not tested. See the [V2 results chapter](docs/performance/19_v2_axi_burst_packed_results-EN.md#8-input-supply-gap-experiment).
+
 The controlled packed comparison uses the same `PACKED_ENABLE=1` Burst Top and maximum length 16 for both modes. Unpacked uses 6 transactions/68 W beats; packed uses 2 transactions/18 W beats. Pure writes fall 80→22 cycles, READY-confirmed load 82→24, end-to-end 115→57 (2.0175×), and the repeatable task including ACK 118→60. START-to-DONE remains 20 cycles.
 
 | Physical comparison | Final functional area | Setup WNS | Hold WNS |

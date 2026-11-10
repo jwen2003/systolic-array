@@ -23,6 +23,8 @@ Host 准备 A/B → Lite/Burst 装载 → bitmap 完整 → START → 冻结 Cor
 
 N2/K17 下，unpacked Burst 最大长度 1/2/4/8/16 的端到端周期分别为 239/171/139/123/115 拍，A/B 纯写入为 204/136/104/88/80 拍；在当前连续供数 BFM 下符合 `W beats + 2 × A/B 写事务数`。
 
+输入供给间隔实验进一步表明：当相邻元素之间有 0/1/3/7 个空拍时，L1/L16 端到端周期分别为 239/115、239/171、305/305、573/573；在已测的 g=3 和 g=7 点，数据等待完全覆盖事务切换开销。结论仅适用于当前单 outstanding BFM 调度，g=2 未测；详见 [V2 结果章节](docs/performance/19_v2_axi_burst_packed_results-zh_CN.md#8-输入供给间隔实验)。
+
 受控 packed 对照在同一个 `PACKED_ENABLE=1` Burst Top 上运行，两组最大长度均为 16。Unpacked 为 6 笔事务/68 个 W beat，packed 为 2 笔/18 beat；纯写入 80→22 拍，含 READY 装载 82→24，端到端 115→57（2.0175×），含 ACK 的可重复任务 118→60。START→DONE 保持 20 拍。
 
 | 物理对照 | 最终功能标准单元面积 | Setup WNS | Hold WNS |

@@ -5,9 +5,9 @@
 
 ## 1. Current Decision
 
-[Established] Lite→Burst→parallel packing now has controlled cycle, synthesis, and physical feedback. Under the unified packed/unpacked timing boundary, N2/K17 end-to-end time falls 115→57 cycles; the old packed regression's 62 cycles include a two-cycle preflight and ACK. Current packed1 passes the executed physical checks at Nangate45 typical, 2.500 ns, single corner, but no complete Pareto frontier is established.
+[Established] Lite→Burst→parallel packing now has controlled cycle, synthesis, and physical feedback. Under the unified packed/unpacked timing boundary, N2/K17 end-to-end time falls 115→57 cycles; the old packed regression's 62 cycles include a two-cycle preflight and ACK. The input-supply-gap experiment is also complete: at the tested g=3/7 points, waiting for data fully hides the L1/L16 transaction-overhead difference. Current packed1 passes the executed physical checks at Nangate45 typical, 2.500 ns, single corner, but no complete Pareto frontier is established.
 
-The current sequence evaluates sticky-DONE polling intervals, double buffering, and DMA. Only after these interface/scheduling experiments and a shared workload/counting convention are frozen does the project move to an independent OS-versus-WS dataflow comparison. Parallel packing is an implemented candidate, not a universal winner.
+The input-supply-gap experiment is complete. Sticky-DONE polling intervals are next, followed by double buffering and DMA. Only after these interface/scheduling experiments and a shared workload/counting convention are frozen does the project move to an independent OS-versus-WS dataflow comparison. Parallel packing is an implemented candidate, not a universal winner.
 
 ## 2. Fair Comparison and Pareto
 
