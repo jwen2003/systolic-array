@@ -11,6 +11,9 @@
 #include <string>
 #include <vector>
 
+// Runtime burst-length benchmark. Every length uses the same RTL, matrices,
+// single-outstanding policy, and end-to-end timing boundary; only runtime
+// transaction grouping changes. A second invocation proves ACK/reload reuse.
 namespace {
 constexpr std::uint32_t STATUS=0x0008, COMMAND=0x0004, ACK=0x000c;
 constexpr std::uint32_t A_BASE=0x1000, B_BASE=0x2000, C_BASE=0x3000;
@@ -29,6 +32,8 @@ Result run(AxiBurstBfm& b,Vsystolic_axi_burst_top& d,unsigned length,const std::
     std::uint64_t se=0,de=0;
     b.set_cycle_observer([&](std::uint64_t c){ if(d.rootp->systolic_axi_burst_top__DOT__core_start) se=c; if(d.rootp->systolic_axi_burst_top__DOT__core_done) de=c; });
     Result r; r.name="BURST_L"+std::to_string(length); r.max_length=length; r.tx=0; r.beats=0;
+    // End-to-end begins immediately before the first A AW attempt and ends at
+    // the final C response; repeat additionally includes ACK.
     const auto first=b.cycles(); auto phase=b.cycles();
     auto load_words=[&](const char* matrix,std::uint32_t base,const std::vector<std::uint32_t>& v){
         for(unsigned x=0;x<v.size();x+=length) { const auto stop=std::min<unsigned>(x+length,v.size());
@@ -43,6 +48,8 @@ Result run(AxiBurstBfm& b,Vsystolic_axi_burst_top& d,unsigned length,const std::
     phase=b.cycles(); b.axi_write(COMMAND,1,1); r.start=b.cycles()-phase;
     phase=b.cycles(); r.polls=0; do { ++r.polls; } while(!(b.axi_read(STATUS)&2)); r.poll=b.cycles()-phase;
     phase=b.cycles(); for(unsigned i=0;i<n;++i) for(unsigned j=0;j<n;++j)
+        // Independent signed dot product catches transport/address mistakes;
+        // it shares no burst splitting or Device decode implementation.
         if(sx18(b.axi_read(C_BASE+4*(i*n+j)))!=golden(a,bb,n,k,i,j)) throw std::runtime_error("golden mismatch");
     r.readback=b.cycles()-phase; r.e2e=b.cycles()-first; phase=b.cycles(); b.axi_write(ACK,1,1); r.ack=b.cycles()-phase; r.repeat=b.cycles()-first;
     r.start_edge=se; r.done_edge=de; if(!se||!de||de<=se) throw std::runtime_error("missing core event");

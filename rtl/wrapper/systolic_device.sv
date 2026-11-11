@@ -258,11 +258,19 @@ module systolic_device #(
 
             case (state)
                 LOAD: if (start_accept) begin
+                    // Device enters RUN and emits a one-cycle registered pulse.
+                    // The Core samples core_start on the following shared edge;
+                    // matrices are immutable because RUN rejects input writes.
                     state <= RUN;
                     core_start <= 1'b1;
                 end
+                // Core results already contain the final MAC when core_done is
+                // sampled. DONE is sticky so software cannot miss that pulse.
                 RUN: if (core_done) state <= DONE;
                 DONE: if (ack_accept) begin
+                    // ACK releases the result view and invalidates both maps.
+                    // Storage bits may remain, but unwritten-read-zero prevents
+                    // stale values from becoming part of the next operation.
                     state <= LOAD;
                     a_written <= '0;
                     b_written <= '0;
@@ -271,6 +279,9 @@ module systolic_device #(
             endcase
 
             if (wr_en && !wr_error && (packed_a || packed_b)) begin
+                // All asserted legal lanes update on the same edge. Each fixed
+                // coordinate and its written bit are assigned together; do not
+                // turn these loops into a mutually exclusive priority chain.
                 for (int unsigned row = 0; row < N; row++) begin
                     for (int unsigned inner = 0; inner < K; inner++) begin
                         if (a_packed_hit[row][inner]) begin
@@ -288,6 +299,9 @@ module systolic_device #(
                     end
                 end
             end else if (wr_en && !wr_error && wr_strb[0]) begin
+                // Normal windows carry one INT8 in lane zero. Constant full-
+                // address comparisons avoid runtime division/dynamic indexing
+                // and prevent aliases from truncated high address bits.
                 for (int unsigned row = 0; row < N; row++) begin
                     for (int unsigned inner = 0; inner < K; inner++) begin
                         if (wr_addr == A_BASE + 4*(row*K + inner)) begin

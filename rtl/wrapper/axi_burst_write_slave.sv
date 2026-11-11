@@ -81,6 +81,9 @@ module axi_burst_write_slave #(
     assign wr_addr = current_addr;
     assign wr_data = s_axi_wdata;
     assign wr_strb = s_axi_wstrb;
+    // A W beat reaches Device only on a real handshake and only while the
+    // descriptor/stream remains usable. WLAST mismatch is detected before
+    // wr_en so the mismatching tail cannot partially update matrix storage.
     assign wr_en = beat_fire && !discard && !last_mismatch;
     assign error_next = burst_error || last_mismatch || (wr_en && wr_error);
 
@@ -95,6 +98,9 @@ module axi_burst_write_slave #(
         end else begin
             case (state)
                 WAIT_ADDR: if (s_axi_awvalid && s_axi_awready) begin
+                    // Descriptor validity is frozen with AW. Invalid requests
+                    // still consume exactly AWLEN+1 beats to preserve channel
+                    // framing, but discard prevents all Device side effects.
                     current_addr <= s_axi_awaddr;
                     beats_remaining <= requested_beats;
                     burst_error <= descriptor_error;
@@ -102,6 +108,9 @@ module axi_burst_write_slave #(
                     state <= RECEIVE_DATA;
                 end
                 RECEIVE_DATA: if (beat_fire) begin
+                    // Address/count advance only on handshake. While WREADY is
+                    // low, the master must hold WVALID, payload, strobe, and
+                    // WLAST; this state deliberately makes no progress.
                     current_addr <= current_addr + 32'd4;
                     beats_remaining <= beats_remaining - 9'd1;
                     burst_error <= error_next;

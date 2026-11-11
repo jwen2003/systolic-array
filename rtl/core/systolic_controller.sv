@@ -56,10 +56,16 @@ module systolic_controller #(
 
             if (!busy) begin
                 if (start) begin
+                    // start is sampled on this edge. The new busy/cycle-zero
+                    // values become visible after the edge, so the Feeder then
+                    // presents injection cycle zero for the next Array edge.
                     busy      <= 1'b1;
                     cycle_idx <= '0;
                 end
             end else if (cycle_idx == LAST_CYCLE_VALUE) begin
+                // The Array samples LAST_CYCLE data on this same edge. done is
+                // therefore never early: its post-edge view accompanies the
+                // accumulator state containing the final MAC.
                 busy <= 1'b0;
                 done <= 1'b1;
             end else begin

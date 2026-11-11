@@ -12,6 +12,9 @@
 #include <string>
 #include <vector>
 
+// Controlled producer-rate benchmark. L1 and L16 share one absolute A-then-B
+// readiness schedule; availability is independent of AXI handshakes so burst
+// overhead can overlap producer waiting without changing the input workload.
 namespace {
 constexpr unsigned N = 2;
 constexpr unsigned K = 17;
@@ -81,11 +84,15 @@ Result run_case(AxiBurstBfm& bfm, Vsystolic_axi_burst_top& dut,
     std::uint64_t accepted_start = 0;
     std::uint64_t visible_done = 0;
     bfm.set_cycle_observer([&](std::uint64_t cycle) {
+        // Observer cycles are post-edge. Their difference measures Device/Core
+        // latency independently from blocking STATUS-poll transaction time.
         if (dut.rootp->systolic_axi_burst_top__DOT__core_start) accepted_start = cycle;
         if (dut.rootp->systolic_axi_burst_top__DOT__core_done) visible_done = cycle;
     });
 
     const auto t0 = bfm.cycles();
+    // All phase intervals use half-open [begin,end) BFM cycle counts. t0 is
+    // captured before the first AW attempt and is shared by all 68 arrivals.
     auto phase = t0;
     unsigned global_index = 0;
     unsigned transaction_index = 0;
@@ -103,6 +110,8 @@ Result run_case(AxiBurstBfm& bfm, Vsystolic_axi_burst_top& dut,
         dut.s_burst_bready = 0;
 
         std::uint64_t aw_cycle = 0;
+        // AW is intentionally allowed before the transaction's first element
+        // is ready. This isolates data supply from address-channel scheduling.
         for (unsigned guard = 0; guard < 10000 && !aw_cycle; ++guard) {
             const auto sample = bfm.step();
             require_no_lite_activity(sample);
@@ -115,6 +124,9 @@ Result run_case(AxiBurstBfm& bfm, Vsystolic_axi_burst_top& dut,
         std::uint64_t last_w = 0;
         for (unsigned beat = 0; beat < values.size(); ++beat, ++global_index) {
             const auto ready_cycle = t0 + std::uint64_t(global_index) * (gap + 1);
+            // Wait against absolute producer time, not "g cycles after the
+            // previous W". Once ready, the element remains available until
+            // accepted, matching a producer with stable queued data.
             dut.s_burst_wvalid = 0;
             while (bfm.cycles() < ready_cycle) {
                 const auto sample = bfm.step();
@@ -128,6 +140,8 @@ Result run_case(AxiBurstBfm& bfm, Vsystolic_axi_burst_top& dut,
             dut.s_burst_wvalid = 1;
             std::uint64_t handshake = 0;
             for (unsigned guard = 0; guard < 10000 && !handshake; ++guard) {
+                // AXI requires payload/control stability throughout W stalls;
+                // retain and check the driven values until the accepting edge.
                 const auto stable_data = dut.s_burst_wdata;
                 const auto stable_strb = dut.s_burst_wstrb;
                 const auto stable_last = dut.s_burst_wlast;
@@ -207,6 +221,8 @@ Result run_case(AxiBurstBfm& bfm, Vsystolic_axi_burst_top& dut,
     phase = bfm.cycles();
     for (unsigned row = 0; row < N; ++row) {
         for (unsigned col = 0; col < N; ++col) {
+            // Golden uses matrix indices and signed arithmetic directly; it
+            // does not reuse Device address-decode or burst-grouping logic.
             const auto actual = sx18(bfm.axi_read(C_BASE + 4 * (row * N + col)));
             if (actual != golden(a, b, row, col))
                 throw std::runtime_error("golden mismatch");

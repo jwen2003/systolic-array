@@ -66,6 +66,9 @@ module systolic_axi_burst_top #(
     logic [31:0] l_addr, l_data, b_addr, b_data;
     logic [3:0] l_strb, b_strb;
     logic lite_aw_owned, lite_w_owned, burst_active, allow_burst_aw;
+    // Gate READY externally and VALID internally. Doing only one side could
+    // let the Lite adapter capture a request that the master never observed as
+    // accepted while Burst owns the shared Device write port.
     assign s_axi_awready = l_awready && !burst_active;
     assign s_axi_wready = l_wready && !burst_active;
     assign allow_burst_aw = !lite_aw_owned && !lite_w_owned
@@ -78,6 +81,9 @@ module systolic_axi_burst_top #(
     always_ff @(posedge clk) begin
         if (!rst_n) begin lite_aw_owned <= 0; lite_w_owned <= 0; end
         else begin
+            // Either half of a split Lite write reserves ownership. Release
+            // waits for B consumption, not merely Device execution, so a new
+            // Burst cannot overtake the outstanding Lite response.
             if (s_axi_awvalid && s_axi_awready) lite_aw_owned <= 1;
             if (s_axi_wvalid && s_axi_wready) lite_w_owned <= 1;
             if (s_axi_bvalid && s_axi_bready) begin

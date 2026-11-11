@@ -9,6 +9,9 @@
 #include <stdexcept>
 #include <vector>
 
+// AXI-Lite reference for the transport comparison. Timing boundaries and
+// matrices match the Burst benchmark so differences reflect the interface
+// transaction schedule rather than Core work or golden-model changes.
 namespace {
 constexpr std::uint32_t STATUS=0x0008, COMMAND=0x0004, ACK=0x000c;
 constexpr std::uint32_t A_BASE=0x1000, B_BASE=0x2000, C_BASE=0x3000;

@@ -55,10 +55,15 @@ module systolic_pipelined_controller #(
 
             if (!busy) begin
                 if (start) begin
+                    // Post-edge RUN zero feeds the boundary register, not a
+                    // MAC. Keeping cycle zero here preserves baseline command
+                    // acceptance while accounting for the added input stage.
                     busy      <= 1'b1;
                     cycle_idx <= '0;
                 end
             end else if (cycle_idx == LAST_CYCLE_VALUE) begin
+                // The boundary-delayed final operands reach the Array on this
+                // edge; done becomes visible only after that MAC commits.
                 busy <= 1'b0;
                 done <= 1'b1;
             end else begin

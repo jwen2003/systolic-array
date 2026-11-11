@@ -58,6 +58,8 @@ CycleSample AxiLiteBfm::tick() {
 }
 
 void AxiLiteBfm::reset() {
+    // Keep the global cycle counter monotonic so callers can compare phases
+    // across reset, but invalidate all protocol state until release completes.
     initialized_ = false;
     idle_master();
     dut_.rst_n = 0;
@@ -108,6 +110,8 @@ void AxiLiteBfm::axi_write(std::uint32_t addr, std::uint32_t data,
     bool aw_done = false;
     bool w_done = false;
     while (!aw_done || !w_done) {
+        // Track AW/W separately because either channel may handshake first.
+        // The unaccepted channel keeps VALID and payload stable across ticks.
         check_timeout(begin, "AW/W handshake", addr);
         dut_.s_axi_awvalid = !aw_done;
         dut_.s_axi_wvalid = !w_done;

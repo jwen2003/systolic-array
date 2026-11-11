@@ -11,6 +11,8 @@ struct PackedData {
     std::vector<std::uint8_t> strobes;
 };
 PackedData pack(const std::vector<std::uint32_t>& bytes) {
+    // Pack in the Device contract's linear row-major order. Tail strobes mark
+    // only real elements; asserting a padding lane is tested as an error below.
     PackedData p;
     for (std::size_t x=0;x<bytes.size();x+=4) {
         std::uint32_t word=0; std::uint8_t strobe=0;
@@ -104,6 +106,9 @@ void packed_case(AxiBurstBfm& b,unsigned n,unsigned k,unsigned length,std::ofstr
             a[x]=std::uint8_t(operation ? (x%2 ? 127 : -128) : int((x*7)%251)-125);
             bb[x]=std::uint8_t(operation ? (x%2 ? 127 : -128) : int((x*13)%253)-126);
         }
+        // Invocation timing includes preflight through ACK. The later readback
+        // replay is outside this boundary and validates storage coordinates
+        // and bitmaps without contaminating the performance measurement.
         const auto begin=b.cycles(); check(b.axi_read(8)==0,"packed preflight");
         const auto load_begin=b.cycles();
         std::uint64_t beats=0,bursts=0,last_commit=0;

@@ -87,6 +87,9 @@ module axi_lite_slave (
     assign wr_addr = awaddr_saved;
     assign wr_data = wdata_saved;
     assign wr_strb = wstrb_saved;
+    // wr_en is intentionally one cycle after the later AW/W capture. It is
+    // also the edge on which the Device consumes the request and BRESP is
+    // registered, so neither saved payload may be overwritten beforehand.
     assign wr_en   = rst_n && aw_pending && w_pending && !s_axi_bvalid;
 
     always_ff @(posedge clk) begin
@@ -124,7 +127,9 @@ module axi_lite_slave (
         end
     end
 
-    // Combinational device read; R registers hold a snapshot under backpressure.
+    // AR handshake and Device sampling share an edge. The combinational Device
+    // view is captured into R registers on that edge; later Device changes must
+    // not alter a response stalled by RREADY.
     assign s_axi_arready = rst_n && !s_axi_rvalid;
     assign rd_addr      = s_axi_araddr;
     assign rd_en        = s_axi_arvalid && s_axi_arready;

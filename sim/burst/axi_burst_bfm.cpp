@@ -9,6 +9,9 @@ AxiBurstBfm::AxiBurstBfm(Vsystolic_axi_burst_top& d, std::uint64_t timeout)
     if (!timeout) throw std::invalid_argument("nonzero BFM timeout required");
 }
 BurstSample AxiBurstBfm::step() {
+    // Sample combinational handshakes while clock is low, then execute the
+    // corresponding rising edge. Returned fields describe what that edge
+    // accepted; the observer runs afterward and sees post-edge DUT state.
     d_.clk=0; d_.eval();
     BurstSample s{
         bool(d_.s_axi_awvalid && d_.s_axi_awready),
@@ -28,6 +31,8 @@ BurstSample AxiBurstBfm::step() {
     return s;
 }
 void AxiBurstBfm::reset() {
+    // reset() is the sole recovery boundary after timeout: withdrawing VALID
+    // from an outstanding AXI request would violate the protocol contract.
     usable_=false;
     d_.clk=0; d_.rst_n=0;
     d_.s_axi_awaddr=0; d_.s_axi_awprot=0; d_.s_axi_awvalid=0;
@@ -60,6 +65,8 @@ void AxiBurstBfm::axi_write(std::uint32_t addr, std::uint32_t data, std::uint8_t
     d_.s_axi_bready=0;
     bool aw=false,w=false;
     while (!aw || !w) {
+        // AW and W are independent. Once either handshakes its VALID drops on
+        // the next iteration while the other channel remains stable/asserted.
         deadline(begin,"Lite AW/W");
         d_.s_axi_awvalid=!aw; d_.s_axi_wvalid=!w;
         const auto s=step(); aw=aw || s.law; w=w || s.lw;
@@ -110,6 +117,8 @@ BurstMetrics AxiBurstBfm::burst_write(std::uint32_t addr,
     BurstMetrics m;
     // No extra cycle between AW acceptance and the first W attempt.
     for (std::size_t x=0;x<words.size();++x) {
+        // master_gap is an intentional post-handshake stimulus gap used by the
+        // legacy sensitivity test. It is not an upstream readiness schedule.
         if (x) for (unsigned gap=0;gap<master_gap;++gap) {
             d_.s_burst_wvalid=0;
             deadline(begin,"Master data gap"); const auto s=step();

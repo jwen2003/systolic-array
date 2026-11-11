@@ -12,6 +12,9 @@
 #include <string>
 #include <vector>
 
+// Controlled packed/unpacked comparison on one PACKED_ENABLE=1 Burst Top.
+// Both modes share data, maximum burst length, control flow, and cycle
+// accounting; only the input window and bytes carried per W beat differ.
 namespace {
 constexpr std::uint32_t STATUS = 0x0008;
 constexpr std::uint32_t COMMAND = 0x0004;
@@ -111,6 +114,8 @@ Result run_mode(AxiBurstBfm& bfm, Vsystolic_axi_burst_top& dut,
         if (dut.rootp->systolic_axi_burst_top__DOT__core_done) visible_done = cycle;
     });
 
+    // End-to-end starts before the first input AW and stops after the last C
+    // response. ACK is measured separately to form a repeatable-task interval.
     const auto first_request = bfm.cycles();
     auto phase = first_request;
     unsigned transaction_index = 0;

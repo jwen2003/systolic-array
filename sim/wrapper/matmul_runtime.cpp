@@ -14,6 +14,8 @@ MatmulRuntime::MatmulRuntime(AxiLiteBfm& bfm, std::uint64_t poll_timeout_cycles)
     : bfm_(bfm), poll_timeout_cycles_(poll_timeout_cycles) {
     if (poll_timeout_cycles_ == 0)
         throw std::invalid_argument("Runtime poll timeout must be nonzero");
+    // Capability reads are construction-time setup, deliberately outside each
+    // invocation's cycle accounting and never inferred from software defaults.
     config_ = {bfm_.axi_read(0x0020), bfm_.axi_read(0x0024),
                bfm_.axi_read(0x0028), bfm_.axi_read(0x002c)};
     const auto nk = std::uint64_t{config_.n} * config_.k;
@@ -48,12 +50,18 @@ MatmulResult MatmulRuntime::matmul(const InputMatrix& a, const InputMatrix& b) {
     const auto begin = bfm_.cycles();
     auto phase = begin;
     auto status = bfm_.axi_read(STATUS);
+    // Runtime owns one non-overlapped operation. It does not clear sticky
+    // errors or ACK an older result on the caller's behalf because either
+    // action would destroy diagnostic state or another owner's result.
     check_device_error(status);
     if (status & (BUSY | DONE))
         throw std::runtime_error("Device is busy or has an unacknowledged result");
     timing.preflight = bfm_.cycles() - phase;
 
     phase = bfm_.cycles();
+    // Row-major software order matches the Device's fixed-coordinate address
+    // contract. This Runtime uses the normal one-INT8-per-word windows; packed
+    // transport remains an experimental driver responsibility.
     for (std::size_t x = 0; x < a.data.size(); ++x)
         bfm_.axi_write(A_BASE + 4u*static_cast<std::uint32_t>(x),
                         static_cast<std::uint8_t>(a.data[x]), 0x1);
@@ -86,6 +94,8 @@ MatmulResult MatmulRuntime::matmul(const InputMatrix& a, const InputMatrix& b) {
     timing.start_poll = bfm_.cycles() - phase;
 
     phase = bfm_.cycles();
+    // Results are copied before ACK because ACK returns Device to LOAD and
+    // releases the sticky DONE snapshot for the next operation.
     for (std::size_t x = 0; x < result.c.data.size(); ++x) {
         const auto raw = bfm_.axi_read(C_BASE + 4u*static_cast<std::uint32_t>(x));
         const auto low = static_cast<std::int32_t>(raw & 0x3ffffu);
