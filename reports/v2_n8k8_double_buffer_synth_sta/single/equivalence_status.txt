@@ -1,0 +1,1 @@
+not_run: N8/K8 source-to-derived equivalence is outside this synthesis/STA gate; an exploratory run showed tool-scalability non-proofs.

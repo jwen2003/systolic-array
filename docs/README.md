@@ -2,7 +2,7 @@
 
 [English](README.md) | [简体中文](README-zh_CN.md)
 
-Start with the [repository current-status summary](../README.md). For V2 read 11→12→13→14→16→17, then the consolidated measured results in 19 and verification scope in 15. Review Core with 01→02→03; V1 physical evidence with 05→06→07→08→09. Document 10 retains the upstream V1 abstraction, not a claim of all Runtime features.
+Start with the [repository current-status summary](../README.md). For V2 read 11→12→13→14→16→17, then the consolidated measured results in 19, the dual-bank experiment in 20, its C Burst read extension in 21, and verification scope in 15. Review Core with 01→02→03; V1 physical evidence with 05→06→07→08→09. Document 10 retains the upstream V1 abstraction, not a claim of all Runtime features.
 
 | Directory | Responsibility |
 |---|---|
@@ -36,3 +36,5 @@ Languages remain paired as -EN.md / -zh_CN.md within each topic, not separate la
 | 17 | [Packing experiment](performance/17_packed_analysis-EN.md) |
 | 18 | [Co-design roadmap](performance/18_codesign_roadmap-EN.md) |
 | 19 | [V2 Burst, packed, and physical results](performance/19_v2_axi_burst_packed_results-EN.md) |
+| 20 | [Dual-input-bank experiment](wrapper/20_dual_input_bank_experiment-EN.md) |
+| 21 | [Dual-bank C Burst read experiment](wrapper/21_dual_bank_c_burst_read_experiment-EN.md) |

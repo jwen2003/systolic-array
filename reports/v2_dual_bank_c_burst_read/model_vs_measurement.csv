@@ -1,0 +1,3 @@
+N,K,scenario,predicted_cycles,measured_cycles,difference,explanation
+32,32,ideal_continuous_1C_per_cycle,23174,24434,1260,20 operations x 63 burst boundaries x 1 empty cycle
+16,64,ideal_continuous_1C_per_cycle,unavailable,12009,unavailable,input-loading limit and transaction boundaries require trace-aware scheduling model

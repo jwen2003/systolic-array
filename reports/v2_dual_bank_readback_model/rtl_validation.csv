@@ -1,0 +1,9 @@
+N,K,mode,rtl_total_cycles,model_total_cycles,rtl_mean_start_interval,model_mean_start_interval,rtl_load_during_core_busy,model_load_during_core_busy,rtl_load_during_device_done,model_load_during_device_done,rtl_burst_and_result_same_cycle,model_burst_and_result_same_cycle,status
+2,2,single,559,559,28,28,0,0,0,0,0,0,match
+2,2,dual,464,464,23,23,19,19,0,0,0,0,match
+8,8,single,3919,3919,196,196,0,0,0,0,0,0,match
+8,8,dual,3254,3254,161,161,361,361,228,228,76,76,match
+16,64,single,23839,23839,1192,1192,0,0,0,0,0,0,match
+16,64,dual,12914,12914,617,617,1577,1577,8132,8132,4028,4028,match
+32,32,single,54559,54559,2728,2728,0,0,0,0,0,0,match
+32,32,dual,43634,43634,2153,2153,1577,1577,8132,8132,4028,4028,match
